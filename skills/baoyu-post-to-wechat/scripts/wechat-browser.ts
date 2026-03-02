@@ -109,6 +109,8 @@ function sleep(ms: number): Promise<void> {
 }
 
 async function getFreePort(): Promise<number> {
+  const fixed = parseInt(process.env.WECHAT_BROWSER_DEBUG_PORT || '', 10);
+  if (fixed > 0) return fixed;
   return new Promise((resolve, reject) => {
     const server = net.createServer();
     server.unref();
@@ -170,6 +172,8 @@ function findChromeExecutable(): string | undefined {
 }
 
 function getDefaultProfileDir(): string {
+  const override = process.env.WECHAT_BROWSER_PROFILE_DIR?.trim();
+  if (override) return path.resolve(override);
   const base = process.env.XDG_DATA_HOME || path.join(os.homedir(), '.local', 'share');
   return path.join(base, 'wechat-browser-profile');
 }
