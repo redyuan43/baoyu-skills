@@ -2,6 +2,12 @@
 
 English | [中文](./CHANGELOG.zh.md)
 
+## 1.48.1 - 2026-03-05
+
+### Features
+- `baoyu-translate`: add figurative language & metaphor mapping to analysis step — interprets metaphors, idioms, and implied meanings before translation instead of translating literally
+- `baoyu-translate`: add "meaning over words", "figurative language", and "emotional fidelity" translation principles to SKILL.md, refined workflow, and subagent prompt template
+
 ## 1.48.0 - 2026-03-05
 
 ### Features
