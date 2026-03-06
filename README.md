@@ -53,7 +53,7 @@ Simply tell Claude Code:
 
 | Plugin | Description | Skills |
 |--------|-------------|--------|
-| **content-skills** | Content generation and publishing | [xhs-images](#baoyu-xhs-images), [infographic](#baoyu-infographic), [cover-image](#baoyu-cover-image), [slide-deck](#baoyu-slide-deck), [comic](#baoyu-comic), [article-illustrator](#baoyu-article-illustrator), [post-to-x](#baoyu-post-to-x), [post-to-wechat](#baoyu-post-to-wechat) |
+| **content-skills** | Content generation and publishing | [xhs-images](#baoyu-xhs-images), [infographic](#baoyu-infographic), [cover-image](#baoyu-cover-image), [slide-deck](#baoyu-slide-deck), [comic](#baoyu-comic), [article-illustrator](#baoyu-article-illustrator), [post-to-x](#baoyu-post-to-x), [post-to-wechat](#baoyu-post-to-wechat), [post-to-weibo](#baoyu-post-to-weibo) |
 | **ai-generation-skills** | AI-powered generation backends | [image-gen](#baoyu-image-gen), [danger-gemini-web](#baoyu-danger-gemini-web) |
 | **utility-skills** | Utility tools for content processing | [url-to-markdown](#baoyu-url-to-markdown), [danger-x-to-markdown](#baoyu-danger-x-to-markdown), [compress-image](#baoyu-compress-image), [format-markdown](#baoyu-format-markdown), [translate](#baoyu-translate) |
 
@@ -557,6 +557,39 @@ To obtain credentials:
 4. Add your machine's IP to the whitelist
 
 **Browser Method** (no API setup needed): Requires Google Chrome. First run opens browser for QR code login (session preserved).
+
+#### baoyu-post-to-weibo
+
+Post content to Weibo (微博). Supports regular posts with text and images, and headline articles (头条文章) with Markdown input. Uses real Chrome with CDP to bypass anti-automation.
+
+**Regular Posts** - Text + up to 9 images:
+
+```bash
+# Post with text
+/baoyu-post-to-weibo "Hello Weibo!"
+
+# Post with images
+/baoyu-post-to-weibo "Check this out" --image photo.png
+```
+
+**Headline Articles (头条文章)** - Long-form Markdown:
+
+```bash
+# Publish article
+/baoyu-post-to-weibo --article article.md
+
+# With cover image
+/baoyu-post-to-weibo --article article.md --cover cover.jpg
+```
+
+**Article Options**:
+| Option | Description |
+|--------|-------------|
+| `--cover <path>` | Cover image |
+| `--title <text>` | Override title (max 32 chars) |
+| `--summary <text>` | Override summary (max 44 chars) |
+
+**Note**: Scripts fill content into the browser. User reviews and publishes manually. First run requires manual Weibo login (session persists).
 
 ### AI Generation Skills
 

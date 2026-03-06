@@ -53,7 +53,7 @@ npx skills add jimliu/baoyu-skills
 
 | 插件 | 说明 | 包含技能 |
 |------|------|----------|
-| **content-skills** | 内容生成和发布 | [xhs-images](#baoyu-xhs-images), [infographic](#baoyu-infographic), [cover-image](#baoyu-cover-image), [slide-deck](#baoyu-slide-deck), [comic](#baoyu-comic), [article-illustrator](#baoyu-article-illustrator), [post-to-x](#baoyu-post-to-x), [post-to-wechat](#baoyu-post-to-wechat) |
+| **content-skills** | 内容生成和发布 | [xhs-images](#baoyu-xhs-images), [infographic](#baoyu-infographic), [cover-image](#baoyu-cover-image), [slide-deck](#baoyu-slide-deck), [comic](#baoyu-comic), [article-illustrator](#baoyu-article-illustrator), [post-to-x](#baoyu-post-to-x), [post-to-wechat](#baoyu-post-to-wechat), [post-to-weibo](#baoyu-post-to-weibo) |
 | **ai-generation-skills** | AI 生成后端 | [image-gen](#baoyu-image-gen), [danger-gemini-web](#baoyu-danger-gemini-web) |
 | **utility-skills** | 内容处理工具 | [url-to-markdown](#baoyu-url-to-markdown), [danger-x-to-markdown](#baoyu-danger-x-to-markdown), [compress-image](#baoyu-compress-image), [format-markdown](#baoyu-format-markdown), [translate](#baoyu-translate) |
 
@@ -557,6 +557,39 @@ WECHAT_APP_SECRET=你的AppSecret
 4. 将你操作的机器 IP 加入白名单
 
 **浏览器方式**（无需 API 配置）：需已安装 Google Chrome，首次运行需扫码登录（登录状态会保存）
+
+#### baoyu-post-to-weibo
+
+发布内容到微博。支持带图文本发布和头条文章（长篇 Markdown）。使用真实 Chrome + CDP 绕过反自动化检测。
+
+**普通微博** - 文字 + 最多 9 张图片：
+
+```bash
+# 发布文字
+/baoyu-post-to-weibo "Hello Weibo!"
+
+# 发布带图片
+/baoyu-post-to-weibo "看看这个" --image photo.png
+```
+
+**头条文章** - 长篇 Markdown 文章：
+
+```bash
+# 发布文章
+/baoyu-post-to-weibo --article article.md
+
+# 带封面图
+/baoyu-post-to-weibo --article article.md --cover cover.jpg
+```
+
+**文章选项**：
+| 选项 | 说明 |
+|------|------|
+| `--cover <path>` | 封面图 |
+| `--title <text>` | 覆盖标题（最多 32 字） |
+| `--summary <text>` | 覆盖摘要（最多 44 字） |
+
+**说明**：脚本会将内容填入浏览器，用户需手动检查并发布。首次运行需手动登录微博（登录状态会保存）。
 
 ### AI 生成技能 (AI Generation Skills)
 
