@@ -1,6 +1,8 @@
 import type { CliArgs } from "../types";
 import * as crypto from "node:crypto";
 
+type JimengSizePreset = "normal" | "2k" | "4k";
+
 export function getDefaultModel(): string {
   return process.env.JIMENG_IMAGE_MODEL || "jimeng_t2i_v40";
 }
@@ -17,6 +19,34 @@ function getRegion(): string {
   return process.env.JIMENG_REGION || "cn-north-1";
 }
 
+function getBaseUrl(): string {
+  return process.env.JIMENG_BASE_URL || "https://visual.volcengineapi.com";
+}
+
+function resolveEndpoint(query: Record<string, string>): {
+  url: string;
+  host: string;
+  canonicalUri: string;
+} {
+  let baseUrl: URL;
+  try {
+    baseUrl = new URL(getBaseUrl());
+  } catch {
+    throw new Error(`Invalid JIMENG_BASE_URL: ${getBaseUrl()}`);
+  }
+
+  baseUrl.search = "";
+  for (const [key, value] of Object.entries(query).sort(([a], [b]) => a.localeCompare(b))) {
+    baseUrl.searchParams.set(key, value);
+  }
+
+  return {
+    url: baseUrl.toString(),
+    host: baseUrl.host,
+    canonicalUri: baseUrl.pathname || "/",
+  };
+}
+
 /**
  * Volcengine HMAC-SHA256 signature generation
  * Following the official documentation at:
@@ -30,11 +60,10 @@ function generateSignature(
   accessKey: string,
   secretKey: string,
   region: string,
-  service: string
+  service: string,
+  canonicalUri: string
 ): string {
   // 1. Create canonical request
-  const canonicalUri = "/";
-
   // Sort query parameters alphabetically
   const sortedQuery = Object.entries(query)
     .sort(([a], [b]) => a.localeCompare(b))
@@ -70,8 +99,10 @@ function generateSignature(
 
   // 2. Create string to sign
   const algorithm = "HMAC-SHA256";
-  const now = new Date();
-  const timestamp = now.toISOString().replace(/[:\-]|\.\d{3}/g, "");
+  const timestamp = headers["X-Date"] || headers["x-date"];
+  if (!timestamp) {
+    throw new Error("Jimeng signature generation requires an X-Date header.");
+  }
   const dateStamp = timestamp.slice(0, 8);
 
   const credentialScope = `${dateStamp}/${region}/${service}/request`;
@@ -99,9 +130,7 @@ function generateSignature(
     .digest("hex");
 
   // 4. Create authorization header
-  const authorization = `${algorithm} Credential=${accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
-
-  return { authorization, timestamp };
+  return `${algorithm} Credential=${accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 }
 
 /**
@@ -144,29 +173,22 @@ const SIZE_PRESETS: Record<string, Record<string, string>> = {
   },
 };
 
-function getImageSize(ar: string | null, quality: CliArgs["quality"], imageSize?: string | null): string {
-  // If explicit size is provided, normalize it (replace * with x)
-  if (imageSize) {
-    return imageSize.replace("*", "x");
-  }
+function normalizeDimensions(value: string): string | null {
+  const match = value.trim().match(/^(\d+)\s*[xX*]\s*(\d+)$/);
+  if (!match) return null;
+  return `${match[1]}x${match[2]}`;
+}
 
-  // Default to 2K quality if not specified
-  const qualityLevel = quality === "normal" ? "normal" : "2k";
+function getClosestPresetSize(ar: string | null, qualityLevel: JimengSizePreset): string {
   const presets = SIZE_PRESETS[qualityLevel];
+  const defaultSize = presets["1:1"]!;
 
-  // Default size
-  const defaultSize = qualityLevel === "normal" ? "1024x1024" : "2048x2048";
-
-  // If no aspect ratio, return default
   if (!ar) return defaultSize;
 
-  // Parse aspect ratio and find closest match
   const parsed = parseAspectRatio(ar);
   if (!parsed) return defaultSize;
 
   const targetRatio = parsed.width / parsed.height;
-
-  // Find closest aspect ratio in presets
   let bestMatch = defaultSize;
   let bestDiff = Infinity;
 
@@ -183,6 +205,25 @@ function getImageSize(ar: string | null, quality: CliArgs["quality"], imageSize?
   return bestMatch;
 }
 
+function normalizeImageSizePreset(imageSize: string, ar: string | null): string | null {
+  const preset = imageSize.trim().toUpperCase();
+  if (preset === "1K") return getClosestPresetSize(ar, "normal");
+  if (preset === "2K") return getClosestPresetSize(ar, "2k");
+  if (preset === "4K") return getClosestPresetSize(ar, "4k");
+  return normalizeDimensions(imageSize);
+}
+
+function getImageSize(ar: string | null, quality: CliArgs["quality"], imageSize?: string | null): string {
+  if (imageSize) {
+    const normalizedSize = normalizeImageSizePreset(imageSize, ar);
+    if (normalizedSize) return normalizedSize;
+  }
+
+  // Default to 2K quality if not specified
+  const qualityLevel: JimengSizePreset = quality === "normal" ? "normal" : "2k";
+  return getClosestPresetSize(ar, qualityLevel);
+}
+
 /**
  * Step 1: Submit async task to Volcengine Jimeng API
  */
@@ -194,13 +235,12 @@ async function submitTask(
   secretKey: string,
   region: string
 ): Promise<string> {
-  const baseUrl = "https://visual.volcengineapi.com";
-
   // Query parameters for submit endpoint
   const query = {
     Action: "CVSync2AsyncSubmitTask",
     Version: "2022-08-31",
   };
+  const endpoint = resolveEndpoint(query);
 
   // Request body - Jimeng API expects width/height as separate integers
   const [width, height] = size.split("x").map(Number);
@@ -221,11 +261,11 @@ async function submitTask(
   const headers = {
     "Content-Type": "application/json",
     "X-Date": timestampHeader,
-    "Host": "visual.volcengineapi.com",
+    "Host": endpoint.host,
   };
 
   // Generate signature
-  const { authorization, timestamp } = generateSignature(
+  const authorization = generateSignature(
     "POST",
     query,
     headers,
@@ -233,15 +273,13 @@ async function submitTask(
     accessKey,
     secretKey,
     region,
-    "cv"
+    "cv",
+    endpoint.canonicalUri
   );
-
-  // Build URL with query parameters
-  const url = `${baseUrl}/?Action=${query.Action}&Version=${query.Version}`;
 
   console.error(`Submitting task to Jimeng (${model})...`, { width, height });
 
-  const res = await fetch(url, {
+  const res = await fetch(endpoint.url, {
     method: "POST",
     headers: {
       ...headers,
@@ -283,7 +321,6 @@ async function pollForResult(
   secretKey: string,
   region: string
 ): Promise<Uint8Array> {
-  const baseUrl = "https://visual.volcengineapi.com";
   const maxAttempts = 60;
   const pollIntervalMs = 2000;
 
@@ -293,6 +330,7 @@ async function pollForResult(
       Action: "CVSync2AsyncGetResult",
       Version: "2022-08-31",
     };
+    const endpoint = resolveEndpoint(query);
 
     // Request body - include req_key and task_id
     const bodyObj = {
@@ -307,11 +345,11 @@ async function pollForResult(
     const headers = {
       "Content-Type": "application/json",
       "X-Date": timestampHeader,
-      "Host": "visual.volcengineapi.com",
+      "Host": endpoint.host,
     };
 
     // Generate signature
-    const { authorization } = generateSignature(
+    const authorization = generateSignature(
       "POST",
       query,
       headers,
@@ -319,13 +357,11 @@ async function pollForResult(
       accessKey,
       secretKey,
       region,
-      "cv"
+      "cv",
+      endpoint.canonicalUri
     );
 
-    // Build URL with query parameters
-    const url = `${baseUrl}/?Action=${query.Action}&Version=${query.Version}`;
-
-    const res = await fetch(url, {
+    const res = await fetch(endpoint.url, {
       method: "POST",
       headers: {
         ...headers,
@@ -401,6 +437,12 @@ export async function generateImage(
   model: string,
   args: CliArgs
 ): Promise<Uint8Array> {
+  if (args.referenceImages.length > 0) {
+    throw new Error(
+      "Jimeng does not support reference images. Use --provider google, openai, openrouter, or replicate."
+    );
+  }
+
   const accessKey = getAccessKey();
   const secretKey = getSecretKey();
   const region = getRegion();

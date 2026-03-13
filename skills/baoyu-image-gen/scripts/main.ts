@@ -573,11 +573,10 @@ function detectProvider(args: CliArgs): Provider {
     args.provider !== "google" &&
     args.provider !== "openai" &&
     args.provider !== "openrouter" &&
-    args.provider !== "replicate" &&
-    args.provider !== "jimeng"
+    args.provider !== "replicate"
   ) {
     throw new Error(
-      "Reference images require a ref-capable provider. Use --provider google (Gemini multimodal), --provider openai (GPT Image edits), --provider openrouter (OpenRouter multimodal), --provider replicate, or --provider jimeng."
+      "Reference images require a ref-capable provider. Use --provider google (Gemini multimodal), --provider openai (GPT Image edits), --provider openrouter (OpenRouter multimodal), or --provider replicate."
     );
   }
 
@@ -596,9 +595,8 @@ function detectProvider(args: CliArgs): Provider {
     if (hasOpenai) return "openai";
     if (hasOpenrouter) return "openrouter";
     if (hasReplicate) return "replicate";
-    if (hasJimeng) return "jimeng";
     throw new Error(
-      "Reference images require Google, OpenAI, OpenRouter, Replicate or Jimeng. Set GOOGLE_API_KEY/GEMINI_API_KEY, OPENAI_API_KEY, OPENROUTER_API_KEY, REPLICATE_API_TOKEN, or Jimeng keys, or remove --ref."
+      "Reference images require Google, OpenAI, OpenRouter, or Replicate. Set GOOGLE_API_KEY/GEMINI_API_KEY, OPENAI_API_KEY, OPENROUTER_API_KEY, or REPLICATE_API_TOKEN, or remove --ref."
     );
   }
 
