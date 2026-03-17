@@ -2,6 +2,11 @@
 
 English | [中文](./CHANGELOG.zh.md)
 
+## 1.71.0 - 2026-03-17
+
+### Features
+- `baoyu-image-gen`: add Seedream reference image support for 5.0/4.5/4.0 models with model-specific size validation
+
 ## 1.70.0 - 2026-03-17
 
 ### Features
