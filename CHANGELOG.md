@@ -2,6 +2,11 @@
 
 English | [中文](./CHANGELOG.zh.md)
 
+## 1.73.0 - 2026-03-18
+
+### Features
+- `baoyu-danger-x-to-markdown`: add video media support for X articles with poster image and video link rendering
+
 ## 1.72.0 - 2026-03-18
 
 ### Features
