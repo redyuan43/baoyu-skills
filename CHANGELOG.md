@@ -2,6 +2,11 @@
 
 English | [中文](./CHANGELOG.zh.md)
 
+## 1.75.0 - 2026-03-21
+
+### Features
+- `baoyu-youtube-transcript`: new skill — download YouTube video transcripts/subtitles and cover images with multi-language, chapters, and speaker identification support
+
 ## 1.74.1 - 2026-03-21
 
 ### Fixes
