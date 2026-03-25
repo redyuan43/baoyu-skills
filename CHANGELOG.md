@@ -2,6 +2,11 @@
 
 English | [中文](./CHANGELOG.zh.md)
 
+## 1.80.0 - 2026-03-24
+
+### Features
+- `baoyu-image-gen`: add Azure OpenAI as independent image generation provider with flexible endpoint parsing, deployment-name resolution, quality mapping, and reference image validation
+
 ## 1.79.2 - 2026-03-23
 
 ### Fixes
