@@ -2,6 +2,21 @@
 
 English | [中文](./CHANGELOG.zh.md)
 
+## 1.82.0 - 2026-03-24
+
+### Features
+- `baoyu-url-to-markdown`: add browser fallback strategy — headless first, automatic retry in visible Chrome on technical failure; new `--browser auto|headless|headed` flag with `--headless`/`--headed` shortcuts
+- `baoyu-url-to-markdown`: add content cleaner module for HTML preprocessing before extraction (remove ads, base64 images, scripts, styles)
+- `baoyu-url-to-markdown`: support base64 data URI images in media localizer alongside remote URLs
+- `baoyu-url-to-markdown`: capture final URL from browser to track redirects for output path generation
+- `baoyu-url-to-markdown`: add agent quality gate documentation for post-capture content validation
+
+### Dependencies
+- `baoyu-url-to-markdown`: upgrade defuddle ^0.12.0 → ^0.14.0
+
+### Tests
+- `baoyu-url-to-markdown`: add unit tests for content-cleaner, html-to-markdown, legacy-converter, media-localizer
+
 ## 1.81.0 - 2026-03-24
 
 ### Features

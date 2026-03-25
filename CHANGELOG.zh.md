@@ -2,6 +2,21 @@
 
 [English](./CHANGELOG.md) | 中文
 
+## 1.82.0 - 2026-03-24
+
+### 新功能
+- `baoyu-url-to-markdown`：新增浏览器回退策略 — 默认无头模式优先，技术故障时自动重试有头 Chrome；新增 `--browser auto|headless|headed` 参数及 `--headless`/`--headed` 快捷方式
+- `baoyu-url-to-markdown`：新增内容清理模块，提取前预处理 HTML（移除广告、base64 图片、脚本、样式）
+- `baoyu-url-to-markdown`：媒体本地化支持 base64 data URI 图片
+- `baoyu-url-to-markdown`：从浏览器捕获最终 URL 以跟踪重定向，用于输出路径生成
+- `baoyu-url-to-markdown`：新增 Agent 质量门控文档，规范捕获后的内容验证流程
+
+### 依赖
+- `baoyu-url-to-markdown`：升级 defuddle ^0.12.0 → ^0.14.0
+
+### 测试
+- `baoyu-url-to-markdown`：新增 content-cleaner、html-to-markdown、legacy-converter、media-localizer 单元测试
+
 ## 1.81.0 - 2026-03-24
 
 ### 新功能
