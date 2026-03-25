@@ -55,6 +55,8 @@ if (Test-Path "$HOME/.baoyu-skills/baoyu-imagine/EXTEND.md") { "user" }
 | `.baoyu-skills/baoyu-imagine/EXTEND.md` | Project directory |
 | `$HOME/.baoyu-skills/baoyu-imagine/EXTEND.md` | User home |
 
+Legacy compatibility: if `.baoyu-skills/baoyu-image-gen/EXTEND.md` exists and the new path does not, runtime renames it to `baoyu-imagine`. If both files exist, runtime leaves them unchanged and uses the new path.
+
 **EXTEND.md Supports**: Default provider | Default quality | Default aspect ratio | Default image size | Default models | Batch worker cap | Provider-specific batch limits
 
 Schema: `references/config/preferences-schema.md`

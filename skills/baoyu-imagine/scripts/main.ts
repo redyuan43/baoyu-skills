@@ -2,7 +2,7 @@ import path from "node:path";
 import process from "node:process";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
-import { access, mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import type {
   BatchFile,
   BatchTaskInput,
@@ -471,14 +471,49 @@ export function parseSimpleYaml(yaml: string): Partial<ExtendConfig> {
   return config;
 }
 
-async function loadExtendConfig(): Promise<Partial<ExtendConfig>> {
-  const home = homedir();
-  const cwd = process.cwd();
+type ExtendConfigPathPair = {
+  current: string;
+  legacy: string;
+};
 
-  const paths = [
-    path.join(cwd, ".baoyu-skills", "baoyu-imagine", "EXTEND.md"),
-    path.join(home, ".baoyu-skills", "baoyu-imagine", "EXTEND.md"),
+function getExtendConfigPathPairs(cwd: string, home: string): ExtendConfigPathPair[] {
+  return [
+    {
+      current: path.join(cwd, ".baoyu-skills", "baoyu-imagine", "EXTEND.md"),
+      legacy: path.join(cwd, ".baoyu-skills", "baoyu-image-gen", "EXTEND.md"),
+    },
+    {
+      current: path.join(home, ".baoyu-skills", "baoyu-imagine", "EXTEND.md"),
+      legacy: path.join(home, ".baoyu-skills", "baoyu-image-gen", "EXTEND.md"),
+    },
   ];
+}
+
+async function exists(filePath: string): Promise<boolean> {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function migrateLegacyExtendConfig(cwd: string, home: string): Promise<void> {
+  for (const { current, legacy } of getExtendConfigPathPairs(cwd, home)) {
+    const [hasCurrent, hasLegacy] = await Promise.all([exists(current), exists(legacy)]);
+    if (hasCurrent || !hasLegacy) continue;
+    await mkdir(path.dirname(current), { recursive: true });
+    await rename(legacy, current);
+  }
+}
+
+export async function loadExtendConfig(
+  cwd = process.cwd(),
+  home = homedir(),
+): Promise<Partial<ExtendConfig>> {
+  await migrateLegacyExtendConfig(cwd, home);
+
+  const paths = getExtendConfigPathPairs(cwd, home).map(({ current }) => current);
 
   for (const p of paths) {
     try {

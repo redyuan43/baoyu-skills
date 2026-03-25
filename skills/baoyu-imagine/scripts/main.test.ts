@@ -13,6 +13,7 @@ import {
   getWorkerCount,
   isRetryableGenerationError,
   loadBatchTasks,
+  loadExtendConfig,
   mergeConfig,
   normalizeOutputImagePath,
   parseArgs,
@@ -168,6 +169,61 @@ batch:
     concurrency: 1,
     start_interval_ms: 1500,
   });
+});
+
+test("loadExtendConfig renames legacy EXTEND.md when the new path is missing", async () => {
+  const root = await makeTempDir("baoyu-imagine-extend-");
+  const cwd = path.join(root, "project");
+  const home = path.join(root, "home");
+  const legacyPath = path.join(cwd, ".baoyu-skills", "baoyu-image-gen", "EXTEND.md");
+  const currentPath = path.join(cwd, ".baoyu-skills", "baoyu-imagine", "EXTEND.md");
+
+  await fs.mkdir(path.dirname(legacyPath), { recursive: true });
+  await fs.mkdir(home, { recursive: true });
+  await fs.writeFile(legacyPath, `---
+default_provider: google
+default_quality: 2k
+---
+`);
+
+  const config = await loadExtendConfig(cwd, home);
+
+  assert.equal(config.default_provider, "google");
+  assert.equal(config.default_quality, "2k");
+  await fs.access(currentPath);
+  await assert.rejects(() => fs.access(legacyPath));
+});
+
+test("loadExtendConfig leaves legacy EXTEND.md untouched when both paths exist", async () => {
+  const root = await makeTempDir("baoyu-imagine-extend-dual-");
+  const cwd = path.join(root, "project");
+  const home = path.join(root, "home");
+  const legacyPath = path.join(cwd, ".baoyu-skills", "baoyu-image-gen", "EXTEND.md");
+  const currentPath = path.join(cwd, ".baoyu-skills", "baoyu-imagine", "EXTEND.md");
+
+  await fs.mkdir(path.dirname(legacyPath), { recursive: true });
+  await fs.mkdir(path.dirname(currentPath), { recursive: true });
+  await fs.mkdir(home, { recursive: true });
+  await fs.writeFile(legacyPath, `---
+default_provider: google
+---
+`);
+  await fs.writeFile(currentPath, `---
+default_provider: openai
+---
+`);
+
+  const config = await loadExtendConfig(cwd, home);
+
+  assert.equal(config.default_provider, "openai");
+  assert.equal(await fs.readFile(legacyPath, "utf8"), `---
+default_provider: google
+---
+`);
+  assert.equal(await fs.readFile(currentPath, "utf8"), `---
+default_provider: openai
+---
+`);
 });
 
 test("mergeConfig only fills values missing from CLI args", () => {
