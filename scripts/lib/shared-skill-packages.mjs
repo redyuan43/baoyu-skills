@@ -10,8 +10,12 @@ const PACKAGE_DEPENDENCY_SECTIONS = [
   "devDependencies",
 ];
 
-const SKIPPED_DIRS = new Set([".git", ".clawhub", ".clawdhub", "node_modules"]);
+const SKIPPED_DIRS = new Set([".git", ".changeset", ".clawhub", ".clawdhub", "node_modules"]);
 const SKIPPED_FILES = new Set([".DS_Store"]);
+const TEST_DIR_NAMES = new Set(["__tests__", "test", "tests"]);
+const TEST_FILE_PATTERN = /\.(test|spec)\.[^.]+$/;
+const CHANGELOG_FILE_PATTERN = /^CHANGELOG(?:\..+)?\.md$/i;
+const UNSUPPORTED_FILES_GLOB_PATTERN = /[*?[\]{}!]/;
 
 export async function syncSharedSkillPackages(repoRoot, options = {}) {
   const root = path.resolve(repoRoot);
@@ -131,23 +135,7 @@ async function syncPackageTree({ sourceDir, targetDir, workspacePackages }) {
   const sourcePackageJsonPath = path.join(sourceDir, "package.json");
   const packageJson = JSON.parse(await fs.readFile(sourcePackageJsonPath, "utf8"));
   const localDeps = collectLocalDependencies(packageJson, workspacePackages);
-
-  const entries = await fs.readdir(sourceDir, { withFileTypes: true });
-  for (const entry of entries) {
-    if (SKIPPED_DIRS.has(entry.name) || SKIPPED_FILES.has(entry.name)) continue;
-
-    const sourcePath = path.join(sourceDir, entry.name);
-    const targetPath = path.join(targetDir, entry.name);
-
-    if (entry.isDirectory()) {
-      await copyDirectory(sourcePath, targetPath);
-      continue;
-    }
-
-    if (!entry.isFile() || entry.name === "package.json") continue;
-    await fs.mkdir(path.dirname(targetPath), { recursive: true });
-    await fs.copyFile(sourcePath, targetPath);
-  }
+  await copyPackageContents({ sourceDir, targetDir, packageJson });
 
   for (const name of localDeps) {
     const nestedSourceDir = workspacePackages.get(name);
@@ -167,7 +155,7 @@ async function copyDirectory(sourceDir, targetDir) {
   await fs.mkdir(targetDir, { recursive: true });
   const entries = await fs.readdir(sourceDir, { withFileTypes: true });
   for (const entry of entries) {
-    if (SKIPPED_DIRS.has(entry.name) || SKIPPED_FILES.has(entry.name)) continue;
+    if (shouldSkipEntry(entry)) continue;
 
     const sourcePath = path.join(sourceDir, entry.name);
     const targetPath = path.join(targetDir, entry.name);
@@ -181,6 +169,102 @@ async function copyDirectory(sourceDir, targetDir) {
     await fs.mkdir(path.dirname(targetPath), { recursive: true });
     await fs.copyFile(sourcePath, targetPath);
   }
+}
+
+async function copyPackageContents({ sourceDir, targetDir, packageJson }) {
+  const includedPaths = resolveIncludedPackagePaths(packageJson);
+  if (!includedPaths) {
+    const entries = await fs.readdir(sourceDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (shouldSkipEntry(entry)) continue;
+
+      const sourcePath = path.join(sourceDir, entry.name);
+      const targetPath = path.join(targetDir, entry.name);
+
+      if (entry.isDirectory()) {
+        await copyDirectory(sourcePath, targetPath);
+        continue;
+      }
+
+      if (!entry.isFile() || entry.name === "package.json") continue;
+      await fs.mkdir(path.dirname(targetPath), { recursive: true });
+      await fs.copyFile(sourcePath, targetPath);
+    }
+    return;
+  }
+
+  for (const relativePath of includedPaths) {
+    const sourcePath = path.join(sourceDir, relativePath);
+    const targetPath = path.join(targetDir, relativePath);
+    await copyPath(sourcePath, targetPath);
+  }
+}
+
+async function copyPath(sourcePath, targetPath) {
+  let stat;
+  try {
+    stat = await fs.lstat(sourcePath);
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") return;
+    throw error;
+  }
+
+  const name = path.basename(sourcePath);
+  if (stat.isDirectory()) {
+    if (shouldSkipName(name, { isDirectory: true })) return;
+    await copyDirectory(sourcePath, targetPath);
+    return;
+  }
+
+  if (!stat.isFile()) return;
+  if (name === "package.json" || shouldSkipName(name, { isFile: true })) return;
+  await fs.mkdir(path.dirname(targetPath), { recursive: true });
+  await fs.copyFile(sourcePath, targetPath);
+}
+
+function resolveIncludedPackagePaths(packageJson) {
+  if (!Array.isArray(packageJson.files)) return null;
+
+  const includedPaths = [];
+  for (const entry of packageJson.files) {
+    if (typeof entry !== "string") continue;
+
+    const normalized = normalizeIncludedPath(entry);
+    if (!normalized || normalized === "package.json") continue;
+    includedPaths.push(normalized);
+  }
+
+  return [...new Set(includedPaths)];
+}
+
+function normalizeIncludedPath(entry) {
+  const trimmed = entry.trim();
+  if (!trimmed) return null;
+  if (UNSUPPORTED_FILES_GLOB_PATTERN.test(trimmed)) {
+    throw new Error(`Unsupported package.json files entry: ${entry}`);
+  }
+
+  const normalized = path.posix.normalize(trimmed.replace(/\\/g, "/")).replace(/^(\.\/)+/, "");
+  if (!normalized || normalized === ".") return null;
+  if (path.posix.isAbsolute(normalized) || normalized.startsWith("../")) {
+    throw new Error(`Package file entry must stay within the package root: ${entry}`);
+  }
+
+  return normalized;
+}
+
+function shouldSkipEntry(entry) {
+  return shouldSkipName(entry.name, {
+    isDirectory: entry.isDirectory(),
+    isFile: entry.isFile(),
+  });
+}
+
+function shouldSkipName(name, { isDirectory = false, isFile = false } = {}) {
+  if (SKIPPED_DIRS.has(name) || SKIPPED_FILES.has(name)) return true;
+  if (isDirectory && TEST_DIR_NAMES.has(name)) return true;
+  if (isFile && (TEST_FILE_PATTERN.test(name) || CHANGELOG_FILE_PATTERN.test(name))) return true;
+  return false;
 }
 
 async function discoverWorkspacePackages(repoRoot) {

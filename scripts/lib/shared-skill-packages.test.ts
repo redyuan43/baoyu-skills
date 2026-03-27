@@ -31,6 +31,26 @@ test("syncSharedSkillPackages vendors workspace packages into skill scripts", as
     path.join(root, "packages", "baoyu-md", "src", "index.ts"),
     "export const markdown = true;\n",
   );
+  await writeFile(
+    path.join(root, "packages", "baoyu-md", "src", "index.test.ts"),
+    "test('ignored', () => {});\n",
+  );
+  await writeFile(
+    path.join(root, "packages", "baoyu-md", "src", "__tests__", "helper.ts"),
+    "export const helper = true;\n",
+  );
+  await writeFile(
+    path.join(root, "packages", "baoyu-md", "tests", "setup.ts"),
+    "export const setup = true;\n",
+  );
+  await writeFile(
+    path.join(root, "packages", "baoyu-md", ".changeset", "demo.md"),
+    "---\n",
+  );
+  await writeFile(
+    path.join(root, "packages", "baoyu-md", "CHANGELOG.md"),
+    "# changelog\n",
+  );
 
   const consumerDir = path.join(root, "skills", "demo-skill", "scripts");
   await writeJson(path.join(consumerDir, "package.json"), {
@@ -67,4 +87,97 @@ test("syncSharedSkillPackages vendors workspace packages into skill scripts", as
     "utf8",
   );
   assert.match(vendoredFile, /markdown = true/);
+
+  await assert.rejects(
+    fs.readFile(path.join(consumerDir, "vendor", "baoyu-md", "src", "index.test.ts"), "utf8"),
+    { code: "ENOENT" },
+  );
+  await assert.rejects(
+    fs.readFile(path.join(consumerDir, "vendor", "baoyu-md", "src", "__tests__", "helper.ts"), "utf8"),
+    { code: "ENOENT" },
+  );
+  await assert.rejects(
+    fs.readFile(path.join(consumerDir, "vendor", "baoyu-md", "tests", "setup.ts"), "utf8"),
+    { code: "ENOENT" },
+  );
+  await assert.rejects(
+    fs.readFile(path.join(consumerDir, "vendor", "baoyu-md", ".changeset", "demo.md"), "utf8"),
+    { code: "ENOENT" },
+  );
+  await assert.rejects(
+    fs.readFile(path.join(consumerDir, "vendor", "baoyu-md", "CHANGELOG.md"), "utf8"),
+    { code: "ENOENT" },
+  );
+});
+
+test("syncSharedSkillPackages respects package.json files allowlists", async (t) => {
+  const root = await makeTempDir("baoyu-sync-files-");
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+
+  await writeJson(path.join(root, "packages", "demo-pkg", "package.json"), {
+    name: "demo-pkg",
+    version: "1.0.0",
+    files: ["README.md", "src", "CHANGELOG.md", ".changeset"],
+  });
+  await writeFile(
+    path.join(root, "packages", "demo-pkg", "README.md"),
+    "# Demo\n",
+  );
+  await writeFile(
+    path.join(root, "packages", "demo-pkg", "src", "index.ts"),
+    "export const demo = true;\n",
+  );
+  await writeFile(
+    path.join(root, "packages", "demo-pkg", "src", "index.test.ts"),
+    "test('ignored', () => {});\n",
+  );
+  await writeFile(
+    path.join(root, "packages", "demo-pkg", "docs", "private.md"),
+    "private\n",
+  );
+  await writeFile(
+    path.join(root, "packages", "demo-pkg", "CHANGELOG.md"),
+    "# changelog\n",
+  );
+  await writeFile(
+    path.join(root, "packages", "demo-pkg", ".changeset", "demo.md"),
+    "---\n",
+  );
+
+  const consumerDir = path.join(root, "skills", "demo-skill", "scripts");
+  await writeJson(path.join(consumerDir, "package.json"), {
+    name: "demo-skill-scripts",
+    version: "1.0.0",
+    dependencies: {
+      "demo-pkg": "^1.0.0",
+    },
+  });
+
+  await syncSharedSkillPackages(root, { install: false });
+
+  const readme = await fs.readFile(path.join(consumerDir, "vendor", "demo-pkg", "README.md"), "utf8");
+  assert.match(readme, /Demo/);
+
+  const vendoredSource = await fs.readFile(
+    path.join(consumerDir, "vendor", "demo-pkg", "src", "index.ts"),
+    "utf8",
+  );
+  assert.match(vendoredSource, /demo = true/);
+
+  await assert.rejects(
+    fs.readFile(path.join(consumerDir, "vendor", "demo-pkg", "docs", "private.md"), "utf8"),
+    { code: "ENOENT" },
+  );
+  await assert.rejects(
+    fs.readFile(path.join(consumerDir, "vendor", "demo-pkg", "CHANGELOG.md"), "utf8"),
+    { code: "ENOENT" },
+  );
+  await assert.rejects(
+    fs.readFile(path.join(consumerDir, "vendor", "demo-pkg", ".changeset", "demo.md"), "utf8"),
+    { code: "ENOENT" },
+  );
+  await assert.rejects(
+    fs.readFile(path.join(consumerDir, "vendor", "demo-pkg", "src", "index.test.ts"), "utf8"),
+    { code: "ENOENT" },
+  );
 });
