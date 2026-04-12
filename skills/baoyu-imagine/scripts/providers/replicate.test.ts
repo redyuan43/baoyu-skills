@@ -24,6 +24,7 @@ function makeArgs(overrides: Partial<CliArgs> = {}): CliArgs {
     quality: null,
     imageSize: null,
     imageSizeSource: null,
+    imageApiDialect: null,
     referenceImages: [],
     n: 1,
     batchFile: null,

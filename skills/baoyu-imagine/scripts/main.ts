@@ -8,6 +8,7 @@ import type {
   BatchTaskInput,
   CliArgs,
   ExtendConfig,
+  OpenAIImageApiDialect,
   Provider,
 } from "./types";
 
@@ -83,6 +84,7 @@ Options:
   --size <WxH>              Size (e.g., 1024x1024)
   --quality normal|2k       Quality preset (default: 2k)
   --imageSize 1K|2K|4K      Image size for Google/OpenRouter (default: from quality)
+  --imageApiDialect <id>    OpenAI-compatible image dialect: openai-native|ratio-metadata
   --ref <files...>          Reference images (Google, OpenAI, Azure, OpenRouter, Replicate supported families, MiniMax, or Seedream 4.0/4.5/5.0)
   --n <count>               Number of images for the current task (default: 1; Replicate currently requires 1)
   --json                    JSON output
@@ -133,6 +135,7 @@ Environment variables:
   JIMENG_IMAGE_MODEL        Default Jimeng model (jimeng_t2i_v40)
   SEEDREAM_IMAGE_MODEL      Default Seedream model (doubao-seedream-5-0-260128)
   OPENAI_BASE_URL           Custom OpenAI endpoint
+  OPENAI_IMAGE_API_DIALECT  OpenAI-compatible image dialect (openai-native|ratio-metadata)
   OPENAI_IMAGE_USE_CHAT     Use /chat/completions instead of /images/generations (true|false)
   OPENROUTER_BASE_URL       Custom OpenRouter endpoint
   OPENROUTER_HTTP_REFERER   Optional app URL for OpenRouter attribution
@@ -170,6 +173,7 @@ export function parseArgs(argv: string[]): CliArgs {
     quality: null,
     imageSize: null,
     imageSizeSource: null,
+    imageApiDialect: null,
     referenceImages: [],
     n: 1,
     batchFile: null,
@@ -299,6 +303,15 @@ export function parseArgs(argv: string[]): CliArgs {
       continue;
     }
 
+    if (a === "--imageApiDialect") {
+      const v = argv[++i];
+      if (v !== "openai-native" && v !== "ratio-metadata") {
+        throw new Error(`Invalid imageApiDialect: ${v}`);
+      }
+      out.imageApiDialect = v;
+      continue;
+    }
+
     if (a === "--ref" || a === "--reference") {
       const { items, next } = takeMany(i);
       if (items.length === 0) throw new Error(`Missing files for ${a}`);
@@ -402,6 +415,9 @@ export function parseSimpleYaml(yaml: string): Partial<ExtendConfig> {
         config.default_aspect_ratio = cleaned === "null" ? null : cleaned;
       } else if (key === "default_image_size") {
         config.default_image_size = value === "null" ? null : value as "1K" | "2K" | "4K";
+      } else if (key === "default_image_api_dialect") {
+        config.default_image_api_dialect =
+          value === "null" ? null : parseOpenAIImageApiDialect(value);
       } else if (key === "default_model") {
         config.default_model = {
           google: null,
@@ -487,6 +503,15 @@ export function parseSimpleYaml(yaml: string): Partial<ExtendConfig> {
   return config;
 }
 
+export function parseOpenAIImageApiDialect(
+  value: string | undefined | null
+): OpenAIImageApiDialect | null {
+  if (!value) return null;
+  const normalized = value.replace(/['"]/g, "").trim();
+  if (normalized === "openai-native" || normalized === "ratio-metadata") return normalized;
+  throw new Error(`Invalid OpenAI image API dialect: ${value}`);
+}
+
 type ExtendConfigPathPair = {
   current: string;
   legacy: string;
@@ -548,6 +573,10 @@ export async function loadExtendConfig(
 export function mergeConfig(args: CliArgs, extend: Partial<ExtendConfig>): CliArgs {
   const aspectRatio = args.aspectRatio ?? extend.default_aspect_ratio ?? null;
   const imageSize = args.imageSize ?? extend.default_image_size ?? null;
+  const imageApiDialect =
+    args.imageApiDialect ??
+    extend.default_image_api_dialect ??
+    parseOpenAIImageApiDialect(process.env.OPENAI_IMAGE_API_DIALECT);
   return {
     ...args,
     provider: args.provider ?? extend.default_provider ?? null,
@@ -560,6 +589,7 @@ export function mergeConfig(args: CliArgs, extend: Partial<ExtendConfig>): CliAr
     imageSizeSource:
       args.imageSizeSource ??
       (args.imageSize !== null ? "cli" : (imageSize !== null ? "config" : null)),
+    imageApiDialect,
   };
 }
 
@@ -891,6 +921,7 @@ export function createTaskArgs(baseArgs: CliArgs, task: BatchTaskInput, batchDir
     quality: task.quality ?? baseArgs.quality ?? null,
     imageSize: task.imageSize ?? baseArgs.imageSize ?? null,
     imageSizeSource: task.imageSize != null ? "task" : (baseArgs.imageSizeSource ?? null),
+    imageApiDialect: task.imageApiDialect ?? baseArgs.imageApiDialect ?? null,
     referenceImages: task.ref ? task.ref.map((filePath) => resolveBatchPath(batchDir, filePath)) : [],
     n: task.n ?? baseArgs.n,
     batchFile: null,

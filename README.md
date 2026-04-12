@@ -790,6 +790,7 @@ AI SDK-based image generation using OpenAI, Azure OpenAI, Google, OpenRouter, Da
 | `--size` | Size (e.g., `1024x1024`) |
 | `--quality` | `normal` or `2k` (default: `2k`) |
 | `--imageSize` | `1K`, `2K`, or `4K` for Google/OpenRouter |
+| `--imageApiDialect` | `openai-native` or `ratio-metadata` for OpenAI-compatible gateways |
 | `--ref` | Reference images (Google, OpenAI, Azure OpenAI, OpenRouter, Replicate supported families, MiniMax, or Seedream 5.0/4.5/4.0) |
 | `--n` | Number of images per request (`replicate` currently requires `--n 1`) |
 | `--json` | JSON output |
@@ -823,6 +824,7 @@ AI SDK-based image generation using OpenAI, Azure OpenAI, Google, OpenRouter, Da
 | `JIMENG_IMAGE_MODEL` | Jimeng model | `jimeng_t2i_v40` |
 | `SEEDREAM_IMAGE_MODEL` | Seedream model | `doubao-seedream-5-0-260128` |
 | `OPENAI_BASE_URL` | Custom OpenAI endpoint | - |
+| `OPENAI_IMAGE_API_DIALECT` | OpenAI-compatible image API dialect (`openai-native` or `ratio-metadata`) | `openai-native` |
 | `OPENAI_IMAGE_USE_CHAT` | Use `/chat/completions` for OpenAI image generation | `false` |
 | `AZURE_OPENAI_BASE_URL` | Azure resource or deployment endpoint | - |
 | `AZURE_API_VERSION` | Azure image API version | `2025-04-01-preview` |

@@ -175,6 +175,7 @@ default_provider: [selected provider or null]
 default_quality: [selected quality]
 default_aspect_ratio: null
 default_image_size: null
+default_image_api_dialect: null
 default_model:
   google: [selected google model or null]
   openai: null
@@ -186,6 +187,8 @@ default_model:
   replicate: null
 ---
 ```
+
+If the user selects `OpenAI` but says their endpoint is only OpenAI-compatible and fronts another image model family, save `default_image_api_dialect: ratio-metadata` when they explicitly confirm the gateway expects aspect-ratio `size` plus metadata-based resolution. Otherwise leave it `null` / `openai-native`.
 
 ## Flow 2: EXTEND.md Exists, Model Null
 

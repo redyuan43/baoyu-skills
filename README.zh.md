@@ -790,6 +790,7 @@ AI 驱动的生成后端。
 | `--size` | 尺寸（如 `1024x1024`） |
 | `--quality` | `normal` 或 `2k`（默认：`2k`） |
 | `--imageSize` | Google/OpenRouter 使用的 `1K`、`2K`、`4K` |
+| `--imageApiDialect` | OpenAI 兼容网关的图像 API 方言（`openai-native` 或 `ratio-metadata`） |
 | `--ref` | 参考图片（Google、OpenAI、Azure OpenAI、OpenRouter、Replicate 支持的模型家族、MiniMax 或 Seedream 5.0/4.5/4.0） |
 | `--n` | 单次请求生成图片数量（`replicate` 当前只支持 `--n 1`） |
 | `--json` | 输出 JSON 结果 |
@@ -823,6 +824,7 @@ AI 驱动的生成后端。
 | `JIMENG_IMAGE_MODEL` | 即梦模型 | `jimeng_t2i_v40` |
 | `SEEDREAM_IMAGE_MODEL` | 豆包模型 | `doubao-seedream-5-0-260128` |
 | `OPENAI_BASE_URL` | 自定义 OpenAI 端点 | - |
+| `OPENAI_IMAGE_API_DIALECT` | OpenAI 兼容图像 API 方言（`openai-native` 或 `ratio-metadata`） | `openai-native` |
 | `OPENAI_IMAGE_USE_CHAT` | OpenAI 改走 `/chat/completions` | `false` |
 | `AZURE_OPENAI_BASE_URL` | Azure 资源或部署端点 | - |
 | `AZURE_API_VERSION` | Azure 图像 API 版本 | `2025-04-01-preview` |

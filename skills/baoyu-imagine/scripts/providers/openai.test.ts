@@ -2,9 +2,16 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  buildOpenAIGenerationsBody,
   extractImageFromResponse,
+  getOpenAIAspectRatio,
+  getOpenAIImageApiDialect,
+  getOpenAIResolution,
   getMimeType,
   getOpenAISize,
+  getOrientationFromAspectRatio,
+  inferAspectRatioFromSize,
+  inferResolutionFromSize,
   parseAspectRatio,
 } from "./openai.ts";
 
@@ -18,6 +25,69 @@ test("OpenAI aspect-ratio parsing and size selection match model families", () =
   assert.equal(getOpenAISize("dall-e-2", "16:9", "2k"), "1024x1024");
   assert.equal(getOpenAISize("gpt-image-1.5", "16:9", "2k"), "1536x1024");
   assert.equal(getOpenAISize("gpt-image-1.5", "4:3", "2k"), "1024x1024");
+  assert.equal(inferAspectRatioFromSize("1536x1024"), "3:2");
+  assert.equal(inferResolutionFromSize("1536x1024"), "2K");
+  assert.equal(getOpenAIAspectRatio({ aspectRatio: null, size: "2048x1152" }), "16:9");
+  assert.equal(getOpenAIResolution({ imageSize: null, size: "2048x1152", quality: "normal" }), "2K");
+  assert.equal(getOrientationFromAspectRatio("16:9"), "landscape");
+  assert.equal(getOrientationFromAspectRatio("9:16"), "portrait");
+  assert.equal(getOrientationFromAspectRatio("1:1"), null);
+  assert.equal(getOpenAIImageApiDialect({ imageApiDialect: null }), "openai-native");
+});
+
+test("OpenAI generations body switches between native and ratio-metadata dialects", () => {
+  assert.deepEqual(
+    buildOpenAIGenerationsBody("Draw a skyline", "gpt-image-1.5", {
+      aspectRatio: "16:9",
+      size: null,
+      quality: "2k",
+      imageSize: null,
+      imageApiDialect: null,
+    }),
+    {
+      model: "gpt-image-1.5",
+      prompt: "Draw a skyline",
+      size: "1536x1024",
+    },
+  );
+
+  assert.deepEqual(
+    buildOpenAIGenerationsBody("Draw a skyline", "gemini-3-pro-image-preview", {
+      aspectRatio: "16:9",
+      size: null,
+      quality: "2k",
+      imageSize: null,
+      imageApiDialect: "ratio-metadata",
+    }),
+    {
+      model: "gemini-3-pro-image-preview",
+      prompt: "Draw a skyline",
+      size: "16:9",
+      metadata: {
+        resolution: "2K",
+        orientation: "landscape",
+      },
+    },
+  );
+
+  assert.deepEqual(
+    buildOpenAIGenerationsBody("Draw a portrait", "gemini-3-pro-image-preview", {
+      aspectRatio: null,
+      size: "1152x2048",
+      quality: "normal",
+      imageSize: null,
+      imageApiDialect: "ratio-metadata",
+    }),
+    {
+      model: "gemini-3-pro-image-preview",
+      prompt: "Draw a portrait",
+      size: "9:16",
+      metadata: {
+        resolution: "2K",
+        orientation: "portrait",
+      },
+    },
+  );
 });
 
 test("OpenAI mime-type detection covers supported reference image extensions", () => {

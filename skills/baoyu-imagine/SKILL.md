@@ -57,7 +57,7 @@ if (Test-Path "$HOME/.baoyu-skills/baoyu-imagine/EXTEND.md") { "user" }
 
 Legacy compatibility: if `.baoyu-skills/baoyu-image-gen/EXTEND.md` exists and the new path does not, runtime renames it to `baoyu-imagine`. If both files exist, runtime leaves them unchanged and uses the new path.
 
-**EXTEND.md Supports**: Default provider | Default quality | Default aspect ratio | Default image size | Default models | Batch worker cap | Provider-specific batch limits
+**EXTEND.md Supports**: Default provider | Default quality | Default aspect ratio | Default image size | OpenAI image API dialect | Default models | Batch worker cap | Provider-specific batch limits
 
 Schema: `references/config/preferences-schema.md`
 
@@ -176,6 +176,7 @@ Paths in `promptFiles`, `image`, and `ref` are resolved relative to the batch fi
 | `--size <WxH>` | Size (e.g., `1024x1024`) |
 | `--quality normal\|2k` | Quality preset (default: `2k`) |
 | `--imageSize 1K\|2K\|4K` | Image size for Google/OpenRouter (default: from quality) |
+| `--imageApiDialect openai-native\|ratio-metadata` | OpenAI-compatible image API dialect. Use `ratio-metadata` when the endpoint is OpenAI-compatible but expects aspect-ratio `size` plus `metadata.resolution` instead of pixel `size` |
 | `--ref <files...>` | Reference images. Supported by Google multimodal, OpenAI GPT Image edits, Azure OpenAI edits (PNG/JPG only), OpenRouter multimodal models, Replicate supported families, MiniMax subject-reference, and Seedream 5.0/4.5/4.0. Not supported by Jimeng, Seedream 3.0, or removed SeedEdit 3.0 |
 | `--n <count>` | Number of images. Replicate currently supports only `--n 1` because this path saves exactly one output image |
 | `--json` | JSON output |
@@ -209,6 +210,7 @@ Paths in `promptFiles`, `image`, and `ref` are resolved relative to the batch fi
 | `JIMENG_IMAGE_MODEL` | Jimeng model override (default: jimeng_t2i_v40) |
 | `SEEDREAM_IMAGE_MODEL` | Seedream model override (default: doubao-seedream-5-0-260128) |
 | `OPENAI_BASE_URL` | Custom OpenAI endpoint |
+| `OPENAI_IMAGE_API_DIALECT` | OpenAI-compatible image API dialect override (`openai-native` or `ratio-metadata`) |
 | `AZURE_OPENAI_BASE_URL` | Azure resource endpoint or deployment endpoint |
 | `AZURE_API_VERSION` | Azure image API version (default: `2025-04-01-preview`) |
 | `OPENROUTER_BASE_URL` | Custom OpenRouter endpoint (default: `https://openrouter.ai/api/v1`) |
@@ -241,6 +243,22 @@ Model priority (highest → lowest), applies to all providers:
 For Azure, `--model` / `default_model.azure` should be the Azure deployment name. `AZURE_OPENAI_DEPLOYMENT` is the preferred env var, and `AZURE_OPENAI_IMAGE_MODEL` remains as a backward-compatible alias.
 
 **EXTEND.md overrides env vars**. If both EXTEND.md `default_model.google: "gemini-3-pro-image-preview"` and env var `GOOGLE_IMAGE_MODEL=gemini-3.1-flash-image-preview` exist, EXTEND.md wins.
+
+### OpenAI-Compatible Gateway Dialects
+
+`provider=openai` means the auth and routing entrypoint is OpenAI-compatible. It does **not** guarantee that the upstream image API uses OpenAI native image-request semantics.
+
+Use `default_image_api_dialect` in `EXTEND.md`, `OPENAI_IMAGE_API_DIALECT`, or `--imageApiDialect` when the endpoint expects a different wire format:
+
+- `openai-native`: Sends pixel `size` such as `1536x1024` and native OpenAI quality fields when supported
+- `ratio-metadata`: Sends aspect-ratio `size` such as `16:9` and maps quality/size intent into `metadata.resolution` (`1K|2K|4K`) plus `metadata.orientation`
+
+Recommended use:
+
+- OpenAI native Images API or strict clones: keep `openai-native`
+- OpenAI-compatible gateways in front of Gemini or similar models: try `ratio-metadata`
+
+Current limitation: `ratio-metadata` only applies to text-to-image generation. Reference-image edit flows still require `openai-native` or another provider with first-class edit support.
 
 **Agent MUST display model info** before each generation:
 - Show: `Using [provider] / [model]`

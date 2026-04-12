@@ -17,6 +17,7 @@ import {
   mergeConfig,
   normalizeOutputImagePath,
   parseArgs,
+  parseOpenAIImageApiDialect,
   parseSimpleYaml,
 } from "./main.ts";
 
@@ -33,6 +34,7 @@ function makeArgs(overrides: Partial<CliArgs> = {}): CliArgs {
     quality: null,
     imageSize: null,
     imageSizeSource: null,
+    imageApiDialect: null,
     referenceImages: [],
     n: 1,
     batchFile: null,
@@ -85,6 +87,8 @@ test("parseArgs parses the main baoyu-imagine CLI flags", () => {
     "2k",
     "--imageSize",
     "4k",
+    "--imageApiDialect",
+    "ratio-metadata",
     "--ref",
     "ref/one.png",
     "ref/two.jpg",
@@ -102,6 +106,7 @@ test("parseArgs parses the main baoyu-imagine CLI flags", () => {
   assert.equal(args.aspectRatioSource, null);
   assert.equal(args.imageSize, "4K");
   assert.equal(args.imageSizeSource, "cli");
+  assert.equal(args.imageApiDialect, "ratio-metadata");
   assert.deepEqual(args.referenceImages, ["ref/one.png", "ref/two.jpg"]);
   assert.equal(args.n, 3);
   assert.equal(args.jobs, 5);
@@ -125,6 +130,7 @@ default_provider: openrouter
 default_quality: normal
 default_aspect_ratio: '16:9'
 default_image_size: 2K
+default_image_api_dialect: ratio-metadata
 default_model:
   google: gemini-3-pro-image-preview
   openai: gpt-image-1.5
@@ -157,6 +163,7 @@ batch:
   assert.equal(config.default_quality, "normal");
   assert.equal(config.default_aspect_ratio, "16:9");
   assert.equal(config.default_image_size, "2K");
+  assert.equal(config.default_image_api_dialect, "ratio-metadata");
   assert.equal(config.default_model?.google, "gemini-3-pro-image-preview");
   assert.equal(config.default_model?.openai, "gpt-image-1.5");
   assert.equal(config.default_model?.zai, "glm-image");
@@ -252,6 +259,7 @@ test("mergeConfig only fills values missing from CLI args", () => {
       default_quality: "2k",
       default_aspect_ratio: "3:2",
       default_image_size: "2K",
+      default_image_api_dialect: "ratio-metadata",
     } satisfies Partial<ExtendConfig>,
   );
 
@@ -261,6 +269,7 @@ test("mergeConfig only fills values missing from CLI args", () => {
   assert.equal(merged.aspectRatioSource, "config");
   assert.equal(merged.imageSize, "4K");
   assert.equal(merged.imageSizeSource, "cli");
+  assert.equal(merged.imageApiDialect, "ratio-metadata");
 });
 
 test("mergeConfig tags inherited imageSize defaults so providers can ignore incompatible config", () => {
@@ -273,6 +282,25 @@ test("mergeConfig tags inherited imageSize defaults so providers can ignore inco
 
   assert.equal(merged.imageSize, "2K");
   assert.equal(merged.imageSizeSource, "config");
+});
+
+test("mergeConfig falls back to OPENAI_IMAGE_API_DIALECT when CLI and EXTEND are unset", (t) => {
+  useEnv(t, {
+    OPENAI_IMAGE_API_DIALECT: "ratio-metadata",
+  });
+
+  const merged = mergeConfig(makeArgs(), {});
+  assert.equal(merged.imageApiDialect, "ratio-metadata");
+});
+
+test("parseOpenAIImageApiDialect validates supported values", () => {
+  assert.equal(parseOpenAIImageApiDialect("openai-native"), "openai-native");
+  assert.equal(parseOpenAIImageApiDialect("ratio-metadata"), "ratio-metadata");
+  assert.equal(parseOpenAIImageApiDialect(null), null);
+  assert.throws(
+    () => parseOpenAIImageApiDialect("gateway-magic"),
+    /Invalid OpenAI image API dialect/,
+  );
 });
 
 test("detectProvider rejects non-ref-capable providers and prefers Google first when multiple keys exist", (t) => {
@@ -492,6 +520,7 @@ test("loadBatchTasks and createTaskArgs resolve batch-relative paths", async (t)
     makeArgs({
       provider: "replicate",
       quality: "2k",
+      imageApiDialect: "ratio-metadata",
       json: true,
     }),
     loaded.tasks[0]!,
@@ -508,6 +537,7 @@ test("loadBatchTasks and createTaskArgs resolve batch-relative paths", async (t)
   assert.equal(taskArgs.provider, "replicate");
   assert.equal(taskArgs.aspectRatio, "16:9");
   assert.equal(taskArgs.quality, "2k");
+  assert.equal(taskArgs.imageApiDialect, "ratio-metadata");
   assert.equal(taskArgs.json, true);
 });
 
