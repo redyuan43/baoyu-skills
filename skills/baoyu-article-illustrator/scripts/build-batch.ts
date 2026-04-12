@@ -8,7 +8,7 @@ type CliArgs = {
   outputPath: string | null;
   imagesDir: string | null;
   provider: string;
-  model: string;
+  model: string | null;
   aspectRatio: string;
   quality: string;
   jobs: number | null;
@@ -30,7 +30,7 @@ Options:
   --output <path>      Path to output batch.json
   --images-dir <path>  Directory for generated images
   --provider <name>    Provider for baoyu-imagine batch tasks (default: replicate)
-  --model <id>         Model for baoyu-imagine batch tasks (default: google/nano-banana-pro)
+  --model <id>         Explicit model for baoyu-imagine batch tasks (default: resolved by baoyu-imagine config/env)
   --ar <ratio>         Aspect ratio for all tasks (default: 16:9)
   --quality <level>    Quality for all tasks (default: 2k)
   --jobs <count>       Recommended worker count metadata (optional)
@@ -44,7 +44,7 @@ function parseArgs(argv: string[]): CliArgs {
     outputPath: null,
     imagesDir: null,
     provider: "replicate",
-    model: "google/nano-banana-pro",
+    model: null,
     aspectRatio: "16:9",
     quality: "2k",
     jobs: null,
@@ -132,15 +132,16 @@ async function main(): Promise<void> {
     }
 
     const imageDir = args.imagesDir ?? path.dirname(args.outputPath);
-    tasks.push({
+    const task: Record<string, unknown> = {
       id: `illustration-${String(entry.index).padStart(2, "0")}`,
       promptFiles: [promptFile],
       image: path.join(imageDir, entry.filename),
       provider: args.provider,
-      model: args.model,
       ar: args.aspectRatio,
       quality: args.quality,
-    });
+    };
+    if (args.model) task.model = args.model;
+    tasks.push(task);
   }
 
   const output: Record<string, unknown> = { tasks };
