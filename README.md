@@ -272,6 +272,44 @@ Generate professional infographics with 21 layout types and 21 visual styles. An
 | ![knolling](./screenshots/infographic-styles/knolling.webp) | ![lego-brick](./screenshots/infographic-styles/lego-brick.webp) | |
 | knolling | lego-brick | |
 
+#### baoyu-diagram
+
+Generate publication-ready SVG diagrams — flowcharts, structural/architecture diagrams, and illustrative intuition diagrams. Claude writes real SVG code directly following a cohesive design system. Output is a single self-contained `.svg` file with embedded styles and auto dark-mode, ready to embed in articles, WeChat posts, slides, Notion, and docs.
+
+```bash
+# Auto-route on the verb in the prompt
+/baoyu-diagram "how JWT authentication works"
+
+# Force a specific type
+/baoyu-diagram "Kubernetes architecture" --type structural
+/baoyu-diagram "how attention works"     --type illustrative
+/baoyu-diagram "CI/CD pipeline"          --type flowchart
+
+# From a markdown source file
+/baoyu-diagram path/to/content.md
+
+# Language and output path
+/baoyu-diagram "微服务架构" --lang zh
+/baoyu-diagram "build pipeline" --out docs/build-pipeline.svg
+```
+
+**Options**:
+| Option | Description |
+|--------|-------------|
+| `--type <name>` | `flowchart`, `structural`, `illustrative`, `auto` (default) |
+| `--lang <code>` | Output language (en, zh, ja, ...) |
+| `--out <path>` | Output file path (default: `diagram/{slug}/diagram.svg`) |
+
+**Diagram types**:
+
+| Type | Reader need | Verbs that trigger it |
+|------|-------------|------------------------|
+| `flowchart` | Walk me through the steps in order | walk through, steps, process, lifecycle, workflow, state machine |
+| `structural` | Show me what's inside what, how it's organised | architecture, components, topology, layout, what's inside |
+| `illustrative` | Give me the intuition — draw the mechanism | how does X work, explain X, intuition for, why does X do Y |
+
+Not an image-generation skill — no LLM image model is called. Claude writes the SVG by hand with hand-computed layout math, so every diagram honors the design system. Embedded `<style>` block with `@media (prefers-color-scheme: dark)` means the same file renders correctly in both light and dark mode anywhere it's embedded.
+
 #### baoyu-cover-image
 
 Generate cover images for articles with 5 dimensions: Type × Palette × Rendering × Text × Mood. Combines 11 color palettes with 7 rendering styles for 77 unique combinations.

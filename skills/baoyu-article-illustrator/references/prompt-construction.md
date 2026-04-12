@@ -193,6 +193,22 @@ ELEMENTS: Rounded cards with dashed/solid borders, wavy hand-drawn arrows with l
 STYLE: Color fills don't completely fill outlines, hand-drawn lettering, generous white space
 ```
 
+**Flowchart + ink-notes + mono-ink palette**:
+```
+Professional hand-drawn visual-note flowchart on pure white. Black ink line work
+with slight wobble, à la Mike Rohde sketchnoting.
+PALETTE: mono-ink — black ink dominant, sparse semantic accents
+COLORS: Pure White background (#FFFFFF), Near Black (#1A1A1A) for all lines,
+        text, and figures; Coral Red (#E8655A) only for risk/emphasis,
+        Muted Teal (#5FA8A8) only for positive/solution states
+ELEMENTS: Left-to-right stage boxes with rounded-rect frames, wavy hand-drawn
+          arrows between stages, simple stick-figure characters with role
+          labels above (e.g., "ML Engineer", "Team Lead"), dashed-border box
+          for future/empty stage, small doodle icons per stage
+STYLE: Hand-lettered titles (bold, oversized), handwritten stage labels and
+        annotations, generous white space, bottom tagline summarizing takeaway
+```
+
 ### Comparison
 
 ```
@@ -227,6 +243,28 @@ COLORS: Left side Warm Orange (#ED8936), Right side Terracotta (#C05621),
 ELEMENTS: Bold icons, black outlines, centered divider line
 ```
 
+**Comparison + ink-notes + mono-ink palette** (Before/After, Traditional vs New):
+```
+Professional hand-drawn sketchnote comparison on pure white. Black ink line work
+with slight wobble, à la Mike Rohde sketchnoting.
+PALETTE: mono-ink — black ink dominant, sparse semantic accents
+COLORS: Pure White background (#FFFFFF), Near Black (#1A1A1A) for all outlines,
+        text, figures, arrows; Coral Red (#E8655A) reserved for risks/gaps
+        (left/Before side); Muted Teal (#5FA8A8) reserved for positives
+        (right/After side). Color accents under 10% of canvas.
+LAYOUT: Left | Right split with vertical hand-drawn divider. Hand-lettered
+        "Before" label (top-left) and "After" label (top-right).
+LEFT SIDE: Stick figure(s) with role label above, speech bubble showing the
+           pain point, bulleted pain-point list in handwritten text.
+RIGHT SIDE: Stick figure(s) showing the new state, bulleted improvement list,
+            small positive-action icons.
+BRIDGE: Curved hand-drawn "mindset shift" arrow bridging left → right with
+        small inline label describing the shift.
+BOTTOM: Single-line hand-lettered tagline summarizing the takeaway.
+STYLE: Hand-lettered headings (bold, oversized), handwritten body annotations,
+        generous white space, no computer fonts, no gradients, no shadows.
+```
+
 ### Framework
 
 ```
@@ -257,6 +295,27 @@ PALETTE OVERRIDE (warm): Warm-only color palette, no cool colors.
 COLORS: Soft Peach background (#FFECD2), nodes in Warm Orange (#ED8936),
         Terracotta (#C05621), Golden Yellow (#F6AD55), black outlines
 ELEMENTS: Rounded rectangles or circles for nodes, thick connecting lines
+```
+
+**Framework + ink-notes + mono-ink palette** (command center, OS analogy):
+```
+Professional hand-drawn sketchnote framework on pure white. Black ink line work
+with slight wobble, à la Mike Rohde sketchnoting.
+PALETTE: mono-ink — black ink dominant, sparse semantic accents
+COLORS: Pure White background (#FFFFFF), Near Black (#1A1A1A) for all lines,
+        text, figures; Dusty Lavender (#9B8AB5) for neutral category tags only;
+        Coral Red (#E8655A) for emphasis sparingly. Color accents under 10%.
+STRUCTURE: Central rounded-rectangle frame as "the system" with hand-lettered
+           title inside. Inner layer of labeled sub-components (node labels
+           above each). Outer layer of feeder arrows from stick-figure
+           operators/users with role labels.
+ELEMENTS: Stick figures at the edges with role tags ("Team Lead", "Operator"),
+          wavy hand-drawn connector arrows with small inline labels, small
+          doodle icons per component, dashed-border placeholder(s) for
+          future/empty capabilities.
+BOTTOM: Single-line hand-lettered tagline.
+STYLE: Hand-lettered headings, handwritten annotations, generous white space,
+        no computer fonts, no gradients.
 ```
 
 ### Timeline

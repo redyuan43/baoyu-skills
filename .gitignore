@@ -154,6 +154,7 @@ illustrations/
 comic/
 translate/
 posts/
+diagram/
 ### IntelliJ IDEA ###
 .idea
 *.iws

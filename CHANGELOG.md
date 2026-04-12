@@ -2,6 +2,11 @@
 
 English | [中文](./CHANGELOG.zh.md)
 
+## 1.99.0 - 2026-04-10
+
+### Features
+- `baoyu-diagram`: add new skill for generating publication-ready SVG diagrams — flowcharts, structural/architecture diagrams, and illustrative intuition diagrams. Claude writes real SVG code directly following a cohesive design system; output is a single self-contained `.svg` file with embedded styles and auto dark-mode, ready to embed in articles, WeChat posts, slides, and docs
+
 ## 1.98.0 - 2026-04-10
 
 ### Features
