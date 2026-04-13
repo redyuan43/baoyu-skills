@@ -45,19 +45,24 @@ export function loadCodeThemeCss(themeName: string): string {
 }
 
 export function buildHtmlDocument(meta: HtmlDocumentMeta, css: string, html: string, codeThemeCss?: string): string {
+  const escapeHtmlAttribute = (value: string) => value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
   const lines = [
     "<!doctype html>",
     "<html>",
     "<head>",
     '  <meta charset="utf-8" />',
     '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
-    `  <title>${meta.title}</title>`,
+    `  <title>${escapeHtmlAttribute(meta.title)}</title>`,
   ];
   if (meta.author) {
-    lines.push(`  <meta name="author" content="${meta.author}" />`);
+    lines.push(`  <meta name="author" content="${escapeHtmlAttribute(meta.author)}" />`);
   }
   if (meta.description) {
-    lines.push(`  <meta name="description" content="${meta.description}" />`);
+    lines.push(`  <meta name="description" content="${escapeHtmlAttribute(meta.description)}" />`);
   }
   lines.push(`  <style>${css}</style>`);
   if (codeThemeCss) {

@@ -46,6 +46,45 @@ export function stripWrappingQuotes(value: string): string {
   return value.trim();
 }
 
+const HTML_ENTITIES: Record<string, string> = {
+  amp: "&",
+  apos: "'",
+  gt: ">",
+  lt: "<",
+  nbsp: " ",
+  quot: '"',
+};
+
+function decodeHtmlCodePoint(codePoint: number, fallback: string): string {
+  if (!Number.isFinite(codePoint) || codePoint < 0 || codePoint > 0x10ffff) {
+    return fallback;
+  }
+  return String.fromCodePoint(codePoint);
+}
+
+function decodeHtmlEntities(value: string): string {
+  return value.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (entity, body: string) => {
+    const normalized = body.toLowerCase();
+    if (normalized.startsWith("#x")) {
+      return decodeHtmlCodePoint(Number.parseInt(normalized.slice(2), 16), entity);
+    }
+    if (normalized.startsWith("#")) {
+      return decodeHtmlCodePoint(Number.parseInt(normalized.slice(1), 10), entity);
+    }
+    return HTML_ENTITIES[normalized] ?? entity;
+  });
+}
+
+export function cleanSummaryText(value: string): string {
+  return decodeHtmlEntities(stripWrappingQuotes(value))
+    .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[\s\S]*?<\/style>/gi, " ")
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<\/?[a-z][a-z0-9:-]*(?:\s+[^>]*)?>/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function toFrontmatterString(value: unknown): string | undefined {
   if (typeof value === "string") {
     return stripWrappingQuotes(value);
@@ -94,10 +133,11 @@ export function extractSummaryFromBody(body: string, maxLen: number): string {
       .replace(/\*(.+?)\*/g, "$1")
       .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
       .replace(/`([^`]+)`/g, "$1");
+    const summaryText = cleanSummaryText(cleanText);
 
-    if (cleanText.length > 20) {
-      if (cleanText.length <= maxLen) return cleanText;
-      return `${cleanText.slice(0, maxLen - 3)}...`;
+    if (summaryText.length > 20) {
+      if (summaryText.length <= maxLen) return summaryText;
+      return `${summaryText.slice(0, maxLen - 3)}...`;
     }
   }
 
