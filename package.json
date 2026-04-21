@@ -20,5 +20,8 @@
     "pdf-lib": "^1.17.1",
     "pptxgenjs": "^4.0.1",
     "sharp": "^0.34.5"
+  },
+  "overrides": {
+    "@xmldom/xmldom": "0.8.13"
   }
 }
