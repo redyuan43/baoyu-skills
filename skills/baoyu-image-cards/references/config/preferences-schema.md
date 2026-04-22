@@ -51,7 +51,7 @@ custom_styles:
 | `preferred_style.description` | string | "" | Custom notes/override |
 | `preferred_layout` | string | null | Layout preference or null |
 | `language` | string | null | Output language (null = auto-detect) |
-| `preferred_image_backend` | string | `auto` | Image backend selection. `auto` = prefer runtime-native tool, fall back to the only installed backend, ask if multiple non-native are present. `ask` = always confirm on every run. `<backend-id>` (e.g., `codex-imagegen`, `baoyu-imagine`, `image_generate`) = pin this backend when available; fall back to `auto` when it isn't. Absent = `auto`. Resolution logic is documented in `SKILL.md`'s `## Image Generation Tools` section. |
+| `preferred_image_backend` | string | `auto` | Image backend selection. `auto` = prefer runtime-native tool, fall back to the only installed backend, ask if multiple non-native are present. `ask` = always confirm on every bitmap-image run. `<backend-id>` (e.g., `codex-imagegen`, `baoyu-danger-gemini-web`, `baoyu-imagine`, `image_generate`) = pin this backend when available; fall back to `auto` when it isn't. Absent = `auto`. Resolution logic is documented in `SKILL.md`'s `## Image Generation Tools` section. |
 | `custom_styles` | array | [] | User-defined styles |
 
 ## Position Options
@@ -121,3 +121,13 @@ custom_styles:
     best_for: "Business, SaaS, enterprise"
 ---
 ```
+
+### Codex recommendation
+
+For Codex visual workflows, prefer:
+
+```yaml
+preferred_image_backend: ask
+```
+
+That keeps the skill's preparation flow, then asks once between built-in `imagegen` and `baoyu-danger-gemini-web` when the final deliverable is a bitmap image.

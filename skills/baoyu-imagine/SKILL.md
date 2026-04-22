@@ -17,10 +17,12 @@ Official API-based image generation. Supports OpenAI GPT Image 2, Azure OpenAI, 
 
 ## Codex Positioning
 
-In Codex, treat this skill as the API-based image backend.
+In Codex, do not treat this skill as the default visual terminal.
 
-- Prefer Codex built-in `$imagegen` for quick interactive single-image work
-- Prefer this skill when you need explicit provider/model selection, API-key billing, batch generation, or provider-specific controls
+- Keep Codex visual work on the local-first path: prepare the content first, then choose a terminal
+- For bitmap output in Codex, prefer asking once between built-in `$imagegen` and `baoyu-danger-gemini-web`
+- For web / HTML output in Codex, prefer `baoyu-danger-gemini-web` to draft the HTML and let Codex do minimal cleanup
+- Use this skill in Codex only when you explicitly need provider/model selection, API-key billing, batch generation, or provider-specific controls
 - `provider=openai` with `model=gpt-image-2` uses the OpenAI API directly and requires `OPENAI_API_KEY`
 - Codex/ChatGPT login does not automatically grant OpenAI Images API access to this skill
 

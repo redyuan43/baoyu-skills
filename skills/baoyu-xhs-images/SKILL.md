@@ -30,7 +30,7 @@ When this skill needs to render an image, resolve the backend in this order:
 2. **Saved preference** — if `EXTEND.md` sets `preferred_image_backend` to a backend available right now, use it.
 3. **Auto-select** (when the preference is `auto`, unset, or the pinned backend isn't available):
    - If the current runtime exposes a native image tool (e.g., Codex `imagegen`, Hermes `image_generate`), use it. Runtime-native tools are preferred by default — agents that know their own tool inventory should surface the native one here.
-   - Otherwise, if exactly one non-native backend is installed (e.g., `baoyu-imagine`), use it.
+   - Otherwise, if exactly one non-native backend is installed (e.g., `baoyu-danger-gemini-web` or `baoyu-imagine`), use it.
    - Otherwise (multiple non-native backends with no runtime-native tool), ask the user once — batch with any other initial questions.
 4. **If none are available**, tell the user and ask how to proceed.
 
@@ -38,7 +38,17 @@ Setting `preferred_image_backend: ask` forces the step-3 prompt every run regard
 
 **Prompt file requirement (hard)**: write each image's full, final prompt to a standalone file under `prompts/` (naming: `NN-{type}-[slug].md`) BEFORE invoking any backend. The file is the reproducibility record and lets you switch backends without regenerating prompts.
 
-Concrete tool names (`imagegen`, `image_generate`, `baoyu-imagine`) above are examples — substitute the local equivalents under the same rule.
+Concrete tool names (`imagegen`, `image_generate`, `baoyu-danger-gemini-web`, `baoyu-imagine`) above are examples — substitute the local equivalents under the same rule.
+
+## Visual Output Terminal
+
+Use this skill's decomposition, style/layout planning, and prompt-writing flow as the shared preparation layer. Then choose the final terminal by user intent:
+
+- If the user clearly wants bitmap XHS image cards → stay on the image terminal and resolve the backend via `## Image Generation Tools`
+- If the user clearly wants a webpage / HTML adaptation → switch to the web terminal: keep the same prepared prompts and references, ask Gemini Web to generate one scrollable HTML page with one section per card, then let Codex do minimal cleanup and save
+- If the user's request is ambiguous about the final deliverable → ask whether the terminal should be `image` or `web`
+
+For Codex users, recommend `preferred_image_backend: ask` so the bitmap path asks every run between built-in `imagegen` and Gemini Web when both are available.
 
 ## Confirmation Policy
 
@@ -446,6 +456,7 @@ EXTEND.md lives at the first matching path listed in Step 0. Three ways to chang
 - **Common one-line edits**:
   - `preferred_image_backend: auto` — default; runtime-native tool wins, falls back to the only installed backend, asks only if multiple non-native are present.
   - `preferred_image_backend: codex-imagegen` — pin to Codex's built-in.
+  - `preferred_image_backend: baoyu-danger-gemini-web` — pin to Gemini Web for bitmap generation.
   - `preferred_image_backend: baoyu-imagine` — pin to the baoyu-imagine skill.
   - `preferred_image_backend: ask` — confirm backend every run.
   - `preferred_style: notion`, `preferred_layout: dense`, `preferred_palette: macaron`, `language: zh`.

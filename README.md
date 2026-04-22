@@ -29,7 +29,7 @@ Example `~/.codex/config.toml` snippet:
 
 ```toml
 [[skills.config]]
-path = "/home/yourname/github/baoyu-skills/skills/baoyu-imagine"
+path = "/home/yourname/github/baoyu-skills/skills/baoyu-cover-image"
 enabled = true
 
 [[skills.config]]
@@ -38,6 +38,8 @@ enabled = true
 ```
 
 This explicit registration path is the most stable option when you only use Codex CLI, because it does not depend on any default global-skill directory convention.
+
+For Codex visual workflows, a good default is `preferred_image_backend: ask` inside the visual skill's `EXTEND.md`: keep the preparation flow in the skill, then ask once between built-in `$imagegen` and `baoyu-danger-gemini-web` whenever the final deliverable is a bitmap image.
 
 See [docs/codex-cli.md](./docs/codex-cli.md) for a Codex-focused setup guide, model-routing notes, and Gemini Web usage guidance.
 
@@ -740,7 +742,7 @@ AI-powered generation backends.
 
 AI SDK-based image generation using OpenAI GPT Image 2, Azure OpenAI, Google, OpenRouter, DashScope (Aliyun Tongyi Wanxiang), MiniMax, Jimeng (即梦), Seedream (豆包), and Replicate APIs. Supports text-to-image, reference images, aspect ratios, custom sizes, batch generation, and quality presets.
 
-**Codex note**: In Codex CLI, single-image interactive work usually fits the built-in `$imagegen` tool best. Use `baoyu-imagine` when you need explicit provider/model control, API-key-based billing, batch generation, or provider-specific options.
+**Codex note**: In Codex CLI, keep this skill out of the main visual workflow. For Codex visual work, first prepare the content and prompts, then either ask once between built-in `$imagegen` and `baoyu-danger-gemini-web` for bitmap output, or use Gemini Web directly when the final deliverable is HTML/web content. Keep `baoyu-imagine` for non-Codex runtimes, API/provider-specific work, and batch jobs.
 
 ```bash
 # Basic generation (auto-detect provider)
@@ -751,9 +753,6 @@ AI SDK-based image generation using OpenAI GPT Image 2, Azure OpenAI, Google, Op
 
 # High quality (2k)
 /baoyu-imagine --prompt "A banner" --image banner.png --quality 2k
-
-# Specific provider
-/baoyu-imagine --prompt "A cat" --image cat.png --provider openai --model gpt-image-2
 
 # Azure OpenAI (model = deployment name)
 /baoyu-imagine --prompt "A cat" --image cat.png --provider azure --model gpt-image-2
@@ -887,11 +886,10 @@ AI SDK-based image generation using OpenAI GPT Image 2, Azure OpenAI, Google, Op
 3. If only one API key is available → use that provider
 4. If multiple providers are available → default to Google, then OpenAI, Azure, OpenRouter, DashScope, Z.AI, MiniMax, Replicate, Jimeng, Seedream
 
-**`gpt-image-2` in Codex vs API**:
-- Codex built-in `$imagegen` also uses `gpt-image-2`
-- `baoyu-imagine --provider openai --model gpt-image-2` uses the OpenAI API directly
-- These two paths are both valid, but they differ in authentication, billing, batching, and operational control
-- `baoyu-imagine` requires `OPENAI_API_KEY`; your Codex/ChatGPT login alone is not enough for its OpenAI API path
+**Codex visual routing**:
+- Bitmap output: keep the preparation workflow in the skill, then ask once between built-in `$imagegen` and `baoyu-danger-gemini-web`
+- Web / HTML output: ask Gemini Web to generate the HTML directly, then let Codex do minimal cleanup and save
+- `baoyu-imagine` remains available, but it is not the recommended Codex terminal
 
 #### baoyu-danger-gemini-web
 

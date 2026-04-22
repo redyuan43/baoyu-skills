@@ -146,7 +146,15 @@ custom_styles: []
 ---
 ```
 
-`preferred_image_backend: auto` is the baked-in default — first-time setup never asks about it. The `## Image Generation Tools` rule in SKILL.md then picks the runtime-native tool (Codex `imagegen`, Hermes `image_generate`, etc.) when one is available, and falls back to installed backends like `baoyu-imagine`.
+`preferred_image_backend: auto` is the baked-in default — first-time setup never asks about it. The `## Image Generation Tools` rule in SKILL.md then picks the runtime-native tool (Codex `imagegen`, Hermes `image_generate`, etc.) when one is available, and falls back to installed backends like `baoyu-danger-gemini-web` or `baoyu-imagine`.
+
+For Codex visual workflows, a recommended manual follow-up is:
+
+```yaml
+preferred_image_backend: ask
+```
+
+That keeps this setup simple, while making bitmap rendering ask once between built-in `imagegen` and Gemini Web on each run.
 
 ## Modifying Preferences Later
 

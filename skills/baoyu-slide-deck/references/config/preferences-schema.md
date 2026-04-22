@@ -41,7 +41,16 @@ custom_styles:
 | `audience` | string | `general` | Default target audience |
 | `language` | string | `auto` | Output language (auto = detect from input) |
 | `review` | boolean | `true` | Show outline review before generation |
-| `preferred_image_backend` | string | `auto` | Image backend selection. `auto` = prefer runtime-native tool, fall back to the only installed backend, ask if multiple non-native are present. `ask` = always confirm on every run. `<backend-id>` (e.g., `codex-imagegen`, `baoyu-imagine`, `image_generate`) = pin this backend when available; fall back to `auto` when it isn't. Absent = `auto`. Resolution logic is documented in `SKILL.md`'s `## Image Generation Tools` section. |
+| `preferred_image_backend` | string | `auto` | Image backend selection. `auto` = prefer runtime-native tool, fall back to the only installed backend, ask if multiple non-native are present. `ask` = always confirm on every bitmap-image run. `<backend-id>` (e.g., `codex-imagegen`, `baoyu-danger-gemini-web`, `baoyu-imagine`, `image_generate`) = pin this backend when available; fall back to `auto` when it isn't. Absent = `auto`. Resolution logic is documented in `SKILL.md`'s `## Image Generation Tools` section. |
+
+### Backend ids
+
+| Value | Meaning |
+|-------|---------|
+| `codex-imagegen` | Codex built-in `imagegen` tool |
+| `baoyu-danger-gemini-web` | Local Gemini Web backend |
+| `baoyu-imagine` | `baoyu-imagine` skill / script backend |
+| `image_generate` | Generic runtime image tool such as Hermes |
 
 ### Custom Dimensions
 
@@ -125,3 +134,13 @@ When no EXTEND.md exists, the skill prompts for initial preferences:
 5. Save location (project or user)
 
 Creates EXTEND.md at chosen location.
+
+## Codex recommendation
+
+For Codex visual workflows, prefer:
+
+```yaml
+preferred_image_backend: ask
+```
+
+That keeps the skill's preparation flow, then asks once between built-in `imagegen` and `baoyu-danger-gemini-web` when the final deliverable is a bitmap image.

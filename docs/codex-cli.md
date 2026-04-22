@@ -12,7 +12,7 @@ Example:
 
 ```toml
 [[skills.config]]
-path = "/home/yourname/github/baoyu-skills/skills/baoyu-imagine"
+path = "/home/yourname/github/baoyu-skills/skills/baoyu-cover-image"
 enabled = true
 
 [[skills.config]]
@@ -22,49 +22,62 @@ enabled = true
 
 Codex also documents global and repo-local skills conceptually, but explicit `skills.config` registration is the least ambiguous path when you mainly use Codex CLI on one machine.
 
-## Image generation routing
+## Visual output routing
 
-Use these two routes deliberately:
+For Codex, treat visual work as a two-stage workflow:
+
+1. Prepare the content first: summarize the project, build the outline, write prompts, and collect any reference images.
+2. Then choose the final terminal:
+   - **Bitmap image terminal**: ask once between Codex built-in `$imagegen` and local `baoyu-danger-gemini-web`
+   - **Web / HTML terminal**: use `baoyu-danger-gemini-web` to draft the HTML, then let Codex do the smallest possible cleanup and file placement
+
+This means Codex work should not default to the OpenAI API path just because `gpt-image-2` exists there as well.
+
+## Bitmap image terminal
+
+Use this path when the final deliverable is a cover image, infographic, comic page, image-card series, slide image, or other raster visual.
+
+Ask the user which rendering backend to use when the current request does not already name one:
 
 - Codex built-in `$imagegen`
-  Best for single-image interactive work inside Codex
-- `baoyu-imagine`
-  Best for explicit provider/model selection, API-key billing, batching, and provider-specific options
+- `baoyu-danger-gemini-web`
 
-Both routes can use `gpt-image-2`, but they are not the same integration path.
+In Codex, set `preferred_image_backend: ask` for visual skills if you want that question every run.
 
-## `gpt-image-2` paths
-
-### 1. Codex built-in
-
-Ask Codex naturally or use `$imagegen`.
-
-Examples:
+Example:
 
 ```text
 $imagegen Create a landing-page hero illustration with a warm editorial style.
 ```
 
 ```text
-Generate a square app icon for a note-taking product. Keep it simple and flat.
+/baoyu-danger-gemini-web --prompt "A cute cat in watercolor" --image cat.png
 ```
 
-### 2. OpenAI API via `baoyu-imagine`
+## Web / HTML terminal
 
-Examples:
+Use this path when the final deliverable is a landing page, project page, webpage mockup, or a web adaptation of a visual skill's output.
+
+Workflow:
+
+1. Reuse the same preparation layer: summary, outline, prompt files, and reference images
+2. Ask Gemini Web to generate the HTML directly
+3. Let Codex do minimal cleanup only: remove escaping/code fences, fix broken links or syntax, and save the final file
+
+Example:
 
 ```bash
-/baoyu-imagine --prompt "A warm editorial hero illustration" --image hero.png --provider openai --model gpt-image-2
+/baoyu-danger-gemini-web --prompt "Create a polished landing page HTML for baoyu-skills" --reference mockup.png
 ```
 
-```bash
-/baoyu-imagine --prompt "Make this product shot cleaner" --image out.png --provider openai --model gpt-image-2 --ref source.png
-```
+## `baoyu-imagine` in Codex
 
-Requirements:
+Keep `baoyu-imagine` out of the Codex main path. In Codex, treat it as an optional API backend for:
 
-- `OPENAI_API_KEY` must be set
-- Codex/ChatGPT account login does not automatically authorize the OpenAI Images API for this skill
+- non-Codex runtimes
+- explicit provider/API testing
+- batch jobs
+- provider-specific controls that do not fit `$imagegen` or Gemini Web
 
 ## Gemini Web in Codex
 

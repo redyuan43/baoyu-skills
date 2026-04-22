@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>baoyu-skills - Supercharge AI Agents with Modular Skills</title>
+<style>
+:root {
+--bg-primary: #FDFBEE;
+--text-main: #2F3E46;
+--primary-action: #EE786C;
+--primary-action-hover: #D86359;
+--accent-teal: #234E52;
+--card-bg: #FFFFFF;
+--card-border: rgba(47, 62, 70, 0.1);
+--subtle-gradient: linear-gradient(135deg, rgba(238, 120, 108, 0.05) 0%, rgba(35, 78, 82, 0.05) 100%);
+--font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+body {
+    font-family: var(--font-stack);
+    background-color: var(--bg-primary);
+    color: var(--text-main);
+    margin: 0;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+h1, h2, h3, h4 {
+    color: #000;
+    font-weight: 700;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+    transition: color 0.2s;
+}
+
+.container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 40px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-primary {
+    background-color: var(--primary-action);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-action-hover);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background-color: #fff;
+    color: var(--text-main);
+    border: 1px solid var(--card-border);
+}
+
+.btn-secondary:hover {
+    background-color: rgba(47, 62, 70, 0.05);
+}
+
+header {
+    padding: 30px 0;
+    position: sticky;
+    top: 0;
+    background-color: rgba(253, 251, 238, 0.95);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.logo {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    gap: 30px;
+    margin: 0;
+    padding: 0;
+    font-weight: 500;
+    color: rgba(47, 62, 70, 0.7);
+}
+
+nav ul a:hover {
+    color: #000;
+}
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.cta-header {
+    padding: 10px 20px;
+    font-size: 14px;
+}
+
+.hero {
+    padding: 100px 0;
+    background: var(--subtle-gradient);
+    border-bottom-left-radius: 40px;
+    border-bottom-right-radius: 40px;
+}
+
+.hero-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+}
+
+.hero-content h1 {
+    font-size: 64px;
+    line-height: 1.1;
+    margin-bottom: 24px;
+}
+
+.hero-content p {
+    font-size: 18px;
+    color: rgba(47, 62, 70, 0.8);
+    margin-bottom: 40px;
+    max-width: 540px;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.hero-illustration {
+    display: flex;
+    justify-content: flex-end;
+    position: relative;
+}
+
+.capabilities {
+    padding: 120px 0;
+}
+
+.capabilities-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+}
+
+.cap-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 40px;
+    transition: box-shadow 0.3s;
+}
+
+.cap-card:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.cap-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background-color: rgba(238, 120, 108, 0.1);
+    color: var(--primary-action);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 24px;
+}
+
+.cap-card h3 {
+    font-size: 20px;
+    margin-bottom: 12px;
+}
+
+.cap-card p {
+    font-size: 15px;
+    color: rgba(47, 62, 70, 0.7);
+    margin: 0;
+}
+
+.workflow {
+    padding: 120px 0;
+    background-color: #fff;
+}
+
+.workflow-title {
+    text-align: center;
+    font-size: 40px;
+    margin-bottom: 20px;
+}
+
+.workflow-intro {
+    max-width: 720px;
+    margin: 0 auto 60px auto;
+    text-align: center;
+    color: rgba(47, 62, 70, 0.7);
+}
+
+.workflow-toggle-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 60px;
+}
+
+.workflow-toggle {
+    display: flex;
+    background-color: #f5f5f5;
+    padding: 4px;
+    border-radius: 50px;
+    font-weight: 500;
+    color: rgba(47, 62, 70, 0.6);
+}
+
+.wf-toggle-item {
+    padding: 10px 24px;
+    border-radius: 50px;
+    cursor: default;
+}
+
+.wf-toggle-item.active {
+    background-color: #fff;
+    color: #000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.workflow-steps {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative;
+}
+
+.step-card {
+    flex: 1;
+    max-width: 250px;
+    text-align: left;
+    position: relative;
+}
+
+.step-icon-wrapper {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    background-color: #fcf6f5;
+    color: var(--primary-action);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    margin-bottom: 24px;
+    border: 1px solid var(--card-border);
+}
+
+.step-number {
+    font-weight: 700;
+    font-size: 18px;
+    color: #000;
+    margin-bottom: 4px;
+}
+
+.step-desc {
+    font-size: 14px;
+    color: rgba(47, 62, 70, 0.7);
+}
+
+.step-arrow {
+    position: absolute;
+    top: 30px;
+    color: rgba(47, 62, 70, 0.2);
+    font-size: 24px;
+}
+
+.step-arrow.a1 { left: 24%; }
+.step-arrow.a2 { left: 49%; }
+.step-arrow.a3 { left: 74%; }
+
+.featured-skills {
+    padding: 120px 0;
+    background-color: #fff;
+}
+
+.skills-title {
+    text-align: center;
+    font-size: 40px;
+    margin-bottom: 18px;
+}
+
+.skills-intro {
+    max-width: 760px;
+    margin: 0 auto 60px auto;
+    text-align: center;
+    color: rgba(47, 62, 70, 0.7);
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+}
+
+.skill-item {
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 24px;
+    transition: transform 0.2s;
+    background: #fff;
+}
+
+.skill-item:hover {
+    transform: translateY(-3px);
+    border-color: rgba(35, 78, 82, 0.15);
+}
+
+.skill-preview {
+    width: 100%;
+    height: 150px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 24px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--card-border);
+}
+
+.preview-concept { background: #fdf6f5; color: #cc6659; }
+.preview-gemini { background: #eff7fe; color: #5a91f4; }
+.preview-social { background: #f4faf4; color: #59cc68; }
+.preview-code { background: #faf4ff; color: #9c59cc; }
+
+.skill-item h4 {
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.skill-item p {
+    font-size: 13px;
+    color: rgba(47, 62, 70, 0.7);
+    margin: 0 0 16px 0;
+}
+
+.skill-meta {
+    font-size: 12px;
+    color: rgba(47, 62, 70, 0.5);
+    margin-bottom: 4px;
+}
+
+.skill-tool {
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pre-footer {
+    background-color: var(--accent-teal);
+    color: #fff;
+    padding: 100px 0 60px 0;
+}
+
+.cta-content {
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto 80px auto;
+}
+
+.pre-footer h2 {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: #fff;
+}
+
+.pre-footer p {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 40px;
+}
+
+.cta-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-white {
+    background-color: #fff;
+    color: var(--accent-teal);
+}
+
+.btn-white:hover {
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+.link-text {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 600;
+    text-decoration: underline;
+    transition: color 0.2s;
+    display: inline-flex;
+    align-items: center;
+}
+
+.link-text:hover {
+    color: #fff;
+}
+
+footer {
+    background-color: var(--accent-teal);
+    color: rgba(255, 255, 255, 0.6);
+    padding: 40px 0 60px 0;
+    font-size: 14px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.footer-grid {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.footer-logo {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.footer-links {
+    display: flex;
+    gap: 24px;
+}
+
+.footer-links a:hover {
+    color: #fff;
+}
+
+.footer-bottom {
+    margin-top: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.social-icons {
+    display: flex;
+    gap: 16px;
+    font-size: 18px;
+}
+
+@media (max-width: 1024px) {
+    .container { padding: 0 24px; }
+    .hero-content h1 { font-size: 48px; }
+    .capabilities-grid { grid-template-columns: repeat(2, 1fr); }
+    .skills-grid { grid-template-columns: repeat(2, 1fr); }
+    .workflow-steps { flex-direction: column; align-items: center; gap: 40px; }
+    .step-card { text-align: center; max-width: 100%; }
+    .step-icon-wrapper { margin: 0 auto 24px auto; }
+    .step-arrow { display: none; }
+}
+
+@media (max-width: 768px) {
+    nav ul { display: none; }
+    .hero-container { grid-template-columns: 1fr; text-align: center; gap: 40px; }
+    .hero-content h1 { font-size: 36px; }
+    .hero-content p { max-width: 100%; }
+    .hero-actions { justify-content: center; flex-direction: column; gap: 10px; }
+    .capabilities-grid { grid-template-columns: 1fr; }
+    .skills-grid { grid-template-columns: 1fr; }
+    .pre-footer h2 { font-size: 32px; }
+    .footer-grid { flex-direction: column; gap: 20px; text-align: center; }
+    .footer-bottom { flex-direction: column; gap: 15px; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<header>
+    <div class="container nav-container">
+        <div class="logo">baoyu-skills</div>
+        <nav>
+            <ul>
+                <li><a href="#workflow">Workflow</a></li>
+                <li><a href="#features">Capabilities</a></li>
+                <li><a href="#examples">Skills</a></li>
+                <li><a href="./codex-cli.md">Codex CLI</a></li>
+                <li><a href="../README.md">Docs</a></li>
+            </ul>
+        </nav>
+        <div class="nav-actions">
+            <a href="../README.md" class="btn btn-primary cta-header">Get Started</a>
+        </div>
+    </div>
+</header>
+
+<section class="hero">
+    <div class="container hero-container">
+        <div class="hero-content">
+            <h1>Supercharge AI Agents with Modular Skills.</h1>
+                <p>Equip Codex CLI and other SKILL.md runtimes with reusable workflows for prompt preparation, bitmap rendering, Gemini Web page generation, publishing, and slide-deck export.</p>
+            <div class="hero-actions">
+                <a href="../README.md" class="btn btn-primary">Explore the Repository</a>
+                <a href="./codex-cli.md" class="btn btn-secondary">Set Up for Codex CLI</a>
+            </div>
+        </div>
+        <div class="hero-illustration">
+            <svg width="450" height="350" viewBox="0 0 450 350" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle opacity="0.1" cx="300" cy="120" r="100" fill="#EE786C"/>
+                <circle opacity="0.1" cx="350" cy="180" r="100" fill="#234E52"/>
+
+                <rect x="250" y="200" width="220" height="150" rx="10" fill="#333" />
+                <circle cx="260" cy="210" r="3" fill="#ff5f56"/>
+                <circle cx="270" cy="210" r="3" fill="#ffbd2e"/>
+                <circle cx="280" cy="210" r="3" fill="#27c93f"/>
+                <text x="260" y="235" fill="white" font-size="10" font-family="monospace">
+                    <tspan x="260" dy="0">[[skills.config]]</tspan>
+                    <tspan x="260" dy="14">path = ".../baoyu-imagine"</tspan>
+                    <tspan x="260" dy="14">$imagegen + gpt-image-2</tspan>
+                    <tspan x="260" dy="14">Gemini Web local workflow</tspan>
+                </text>
+
+                <rect x="220" y="50" width="100" height="120" rx="15" fill="#f0f0f0" stroke="#ddd" stroke-width="2"/>
+                <rect x="240" y="70" width="60" height="30" rx="15" fill="#EE786C"/>
+                <rect x="255" y="110" width="30" height="5" fill="#ddd"/>
+                <rect x="240" y="130" width="60" height="15" rx="5" fill="#234E52"/>
+
+                <rect x="150" y="180" width="40" height="40" rx="5" fill="#4B6E8C" opacity="0.7"/>
+                <rect x="195" y="210" width="40" height="40" rx="5" fill="#D3C95D" opacity="0.7"/>
+                <rect x="120" y="230" width="40" height="40" rx="5" fill="#E86E6E" opacity="0.7"/>
+
+                <path d="M220 120 L170 180" stroke="#234E52" stroke-width="1" stroke-dasharray="4 4"/>
+                <path d="M220 120 L140 230" stroke="#234E52" stroke-width="1" stroke-dasharray="4 4"/>
+                <path d="M300 120 L350 200" stroke="#234E52" stroke-width="1"/>
+            </svg>
+        </div>
+    </div>
+</section>
+
+<section id="features" class="capabilities">
+    <div class="container capabilities-grid">
+        <div class="cap-card">
+            <div class="cap-icon">⚒</div>
+            <h3>Modular Codex Skills</h3>
+            <p>Register selected skill directories in Codex CLI and reuse them across projects through the SKILL.md workflow model.</p>
+        </div>
+
+        <div class="cap-card">
+            <div class="cap-icon">🌅</div>
+            <h3>OpenAI Image Paths</h3>
+            <p>Use native runtime image tools directly or route through baoyu-imagine for explicit provider and model control including gpt-image-2.</p>
+        </div>
+
+        <div class="cap-card">
+            <div class="cap-icon">🌐</div>
+            <h3>Gemini Web Local Skill</h3>
+            <p>Run browser-authenticated Gemini Web workflows locally for image generation, or for HTML/page generation when the final deliverable should be a webpage.</p>
+        </div>
+
+        <div class="cap-card">
+            <div class="cap-icon">🔗</div>
+            <h3>Workflow Orchestration</h3>
+            <p>Keep prompts, confirmations, file layout, and execution steps readable instead of hiding everything behind opaque glue code.</p>
+        </div>
+
+        <div class="cap-card">
+            <div class="cap-icon">📇</div>
+            <h3>PPTX/PDF Slide Export</h3>
+            <p>Generate slide decks from source content, then merge them into real shareable presentation outputs through baoyu-slide-deck.</p>
+        </div>
+
+        <div class="cap-card">
+            <div class="cap-icon">🛠</div>
+            <h3>Extensible Delivery Shape</h3>
+            <p>Use the repo as local skills today and wrap selected workflows later for app-server or MCP-style delivery when that becomes necessary.</p>
+        </div>
+    </div>
+</section>
+
+<section id="workflow" class="workflow">
+    <div class="container">
+        <h2 class="workflow-title">The Skill-Building Workflow</h2>
+        <p class="workflow-intro">The repository is built around transparent execution: define the task, configure the runtime, generate assets or structured output, then package the result for real-world use.</p>
+
+        <div class="workflow-toggle-container">
+            <div class="workflow-toggle">
+                <div class="wf-toggle-item active">Product UI</div>
+                <div class="wf-toggle-item">Codex CLI</div>
+            </div>
+        </div>
+
+        <div class="workflow-steps">
+            <div class="step-card">
+                <div class="step-icon-wrapper">📄</div>
+                <div class="step-number">1. Define</div>
+                <p class="step-desc">Specify a reusable workflow in a clear SKILL.md file with constraints, prompts, and output expectations.</p>
+            </div>
+
+            <div class="step-arrow a1">→</div>
+
+            <div class="step-card">
+                <div class="step-icon-wrapper">⚙️</div>
+                <div class="step-number">2. Configure</div>
+                <p class="step-desc">Pick the runtime path: native image tool, OpenAI API, Gemini Web, or a utility workflow like publishing or conversion.</p>
+            </div>
+
+            <div class="step-arrow a2">→</div>
+
+            <div class="step-card">
+                <div class="step-icon-wrapper">▶️</div>
+                <div class="step-number">3. Execute</div>
+                <p class="step-desc">Run the skill from Codex CLI or another compatible agent runtime and generate the working files or media outputs.</p>
+            </div>
+
+            <div class="step-arrow a3">→</div>
+
+            <div class="step-card">
+                <div class="step-icon-wrapper">🔗</div>
+                <div class="step-number">4. Package</div>
+                <p class="step-desc">Merge outputs into final artifacts such as markdown, publishable visuals, or deck files like PPTX and PDF.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="examples" class="featured-skills">
+    <div class="container">
+        <h2 class="skills-title">Example Skills</h2>
+        <p class="skills-intro">A few representative workflows from the repository: explicit image routing, browser-backed generation, deck production, and structured content automation.</p>
+        <div class="skills-grid">
+            <div class="skill-item">
+                <div class="skill-preview preview-concept">Image</div>
+                <h4>baoyu-imagine</h4>
+                <p>Generate images with provider-specific controls, reference inputs, and explicit model routing such as gpt-image-2.</p>
+                <div class="skill-meta">Used Tools</div>
+                <div class="skill-tool">OpenAI API / native runtime image tools</div>
+            </div>
+
+            <div class="skill-item">
+                <div class="skill-preview preview-gemini">Gemini</div>
+                <h4>baoyu-danger-gemini-web</h4>
+                <p>Use browser-authenticated Gemini Web sessions locally for image generation, text generation, and structured JSON output.</p>
+                <div class="skill-meta">Used Tools</div>
+                <div class="skill-tool">Gemini Web local skill</div>
+            </div>
+
+            <div class="skill-item">
+                <div class="skill-preview preview-social">Deck</div>
+                <h4>baoyu-slide-deck</h4>
+                <p>Turn source content into slide images and export finished presentation artifacts for reading, sharing, and lightweight delivery.</p>
+                <div class="skill-meta">Used Tools</div>
+                <div class="skill-tool">PPTX / PDF export</div>
+            </div>
+
+            <div class="skill-item">
+                <div class="skill-preview preview-code">Flow</div>
+                <h4>SKILL.md Workflows</h4>
+                <p>Keep prompts, confirmations, file conventions, and post-processing steps legible so agents can execute them consistently.</p>
+                <div class="skill-meta">Used Tools</div>
+                <div class="skill-tool">Codex CLI and compatible runtimes</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="pre-footer">
+    <div class="container cta-content">
+        <h2>Ready to build smarter AI workflows?</h2>
+                <p>Use the repository locally today: prepare prompts once, then choose a bitmap terminal or a Gemini Web HTML terminal depending on the final deliverable.</p>
+        <div class="cta-actions">
+            <a href="../README.md" class="btn btn-white">Explore the Docs</a>
+            <a href="./codex-cli.md" class="link-text">Open Codex CLI guide →</a>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container footer-grid">
+            <div class="footer-logo">baoyu-skills</div>
+            <div class="footer-links">
+                <a href="#features">Capabilities</a>
+                <a href="#workflow">Workflow</a>
+                <a href="#examples">Skills</a>
+                <a href="../README.zh.md">中文说明</a>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <p>&copy; 2026 baoyu-skills. Built for local-first agent workflows.</p>
+            <div class="social-icons">
+                <span>Codex</span>
+                <span>GitHub</span>
+                <span>Gemini</span>
+            </div>
+        </div>
+    </footer>
+</section>
+
+</body>
+</html>
