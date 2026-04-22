@@ -919,6 +919,19 @@ AI 驱动的生成后端。
 /baoyu-danger-gemini-web --prompt "描述这张图片" --ref image.png --json
 ```
 
+#### baoyu-danger-chatgpt-web
+
+通过真实 Chrome profile 调用 ChatGPT Web 的危险本地自动化能力。
+
+这条路径与 OpenAI 官方的 Apps SDK / MCP 路线刻意分开；只有当用户明确要“本地浏览器态的 ChatGPT Web 自动化”时，才使用这个 skill。
+
+```bash
+/baoyu-danger-chatgpt-web --list-profiles
+/baoyu-danger-chatgpt-web --login --profile-email redyuan43@gmail.com
+/baoyu-danger-chatgpt-web --profile-email redyuan43@gmail.com "总结这个仓库"
+/baoyu-danger-chatgpt-web --profile-email redyuan43@gmail.com --sessionId demo-1 "继续刚才的话题"
+```
+
 ### 工具技能 (Utility Skills)
 
 内容处理工具。

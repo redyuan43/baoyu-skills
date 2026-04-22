@@ -919,6 +919,19 @@ Interacts with Gemini Web to generate text and images.
 /baoyu-danger-gemini-web --prompt "Describe this" --ref image.png --json
 ```
 
+#### baoyu-danger-chatgpt-web
+
+Dangerous local ChatGPT Web automation through a real Chrome profile.
+
+This route is intentionally separate from the official OpenAI Apps SDK / MCP path. Use it only when the user explicitly wants local browser-based ChatGPT Web access.
+
+```bash
+/baoyu-danger-chatgpt-web --list-profiles
+/baoyu-danger-chatgpt-web --login --profile-email redyuan43@gmail.com
+/baoyu-danger-chatgpt-web --profile-email redyuan43@gmail.com "Summarize this repository"
+/baoyu-danger-chatgpt-web --profile-email redyuan43@gmail.com --sessionId demo-1 "Continue the previous thread"
+```
+
 ### Utility Skills
 
 Utility tools for content processing.
