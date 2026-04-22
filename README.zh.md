@@ -2,7 +2,7 @@
 
 [English](./README.md) | 中文
 
-宝玉分享的 Claude Code 技能集，提升日常工作效率。
+宝玉分享的技能集，支持 Claude Code、Codex 以及其他兼容 `SKILL.md` 工作流的 agent runtime，帮助提升日常工作效率。
 
 ## 前置要求
 
@@ -16,6 +16,30 @@
 ```bash
 npx skills add jimliu/baoyu-skills
 ```
+
+### 在 Codex CLI 中使用
+
+Codex 官方支持可复用 skills，并且 skills 可在 CLI、IDE extension 和 Codex app 之间复用。针对这个仓库，推荐的 Codex 用法是：
+
+1. 把仓库放在稳定路径，例如 `~/github/baoyu-skills`
+2. 在 `~/.codex/config.toml` 里显式注册需要的 skill
+3. 作为“用户级全局 skill”在所有项目中复用
+
+`~/.codex/config.toml` 示例：
+
+```toml
+[[skills.config]]
+path = "/home/yourname/github/baoyu-skills/skills/baoyu-imagine"
+enabled = true
+
+[[skills.config]]
+path = "/home/yourname/github/baoyu-skills/skills/baoyu-danger-gemini-web"
+enabled = true
+```
+
+对“只有 Codex CLI”的环境来说，显式注册是最稳妥的方式，不依赖某个默认全局 skill 目录约定。
+
+更完整的 Codex 安装、模型路由和 Gemini Web 使用说明见 [docs/codex-cli.md](./docs/codex-cli.md)。
 
 ### 发布到 ClawHub / OpenClaw
 
@@ -716,6 +740,8 @@ AI 驱动的生成后端。
 
 基于 AI SDK 的图像生成，支持 OpenAI GPT Image 2、Azure OpenAI、Google、OpenRouter、DashScope（阿里通义万相）、MiniMax、即梦（Jimeng）、豆包（Seedream）和 Replicate API。支持文生图、参考图、宽高比、自定义尺寸、批量生成和质量预设。
 
+**Codex 说明**：在 Codex CLI 里，单张、交互式的出图任务通常更适合直接用内建 `$imagegen`。当你需要显式 provider/model 控制、API 计费、批量生成，或者服务商特有参数时，再使用 `baoyu-imagine`。
+
 ```bash
 # 基础生成（自动检测服务商）
 /baoyu-imagine --prompt "一只可爱的猫" --image cat.png
@@ -861,9 +887,17 @@ AI 驱动的生成后端。
 3. 如果只有一个 API 密钥 → 使用对应服务商
 4. 如果多个可用 → 默认使用 Google，然后依次为 OpenAI、Azure、OpenRouter、DashScope、Z.AI、MiniMax、Replicate、即梦、豆包
 
+**Codex 内建与 API 的 `gpt-image-2` 区别**：
+- Codex 内建 `$imagegen` 同样使用 `gpt-image-2`
+- `baoyu-imagine --provider openai --model gpt-image-2` 走的是 OpenAI API
+- 两条路径都成立，但鉴权方式、计费方式、批量能力和可控性不同
+- `baoyu-imagine` 需要 `OPENAI_API_KEY`；仅登录 Codex/ChatGPT 账号并不足以让这个 skill 直接调用 OpenAI Images API
+
 #### baoyu-danger-gemini-web
 
 与 Gemini Web 交互，生成文本和图片。
+
+**Codex 说明**：这个 skill 设计为“在 Codex 中直接调用的本地 skill”，不是网页 UI，不是 MCP server，也不是 Codex app-server 集成。它封装的是本地浏览器登录态下的 Gemini Web 文本/图片生成、参考图输入和多轮会话能力。
 
 **文本生成：**
 
@@ -877,6 +911,14 @@ AI 驱动的生成后端。
 ```bash
 /baoyu-danger-gemini-web --prompt "一只可爱的猫" --image cat.png
 /baoyu-danger-gemini-web --promptfiles system.md content.md --image out.png
+```
+
+**多轮会话 / 结构化输出：**
+
+```bash
+/baoyu-danger-gemini-web "记住数字 42" --sessionId demo-42
+/baoyu-danger-gemini-web "刚才的数字是多少？" --sessionId demo-42
+/baoyu-danger-gemini-web --prompt "描述这张图片" --ref image.png --json
 ```
 
 ### 工具技能 (Utility Skills)
@@ -1236,6 +1278,7 @@ mkdir -p .baoyu-skills/baoyu-cover-image
 - 首次运行会打开浏览器进行 Google 身份验证
 - Cookies 会被缓存供后续使用
 - 不保证 API 的稳定性或可用性
+- 对 Codex 的推荐集成方式是“本地全局 skill”，不是远程 app server
 
 **支持的浏览器**（自动检测）：Google Chrome、Chrome Canary/Beta、Chromium、Microsoft Edge
 

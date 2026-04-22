@@ -15,6 +15,15 @@ metadata:
 
 Official API-based image generation. Supports OpenAI GPT Image 2, Azure OpenAI, Google, OpenRouter, DashScope (阿里通义万象), Z.AI GLM-Image, MiniMax, Jimeng (即梦), Seedream (豆包) and Replicate.
 
+## Codex Positioning
+
+In Codex, treat this skill as the API-based image backend.
+
+- Prefer Codex built-in `$imagegen` for quick interactive single-image work
+- Prefer this skill when you need explicit provider/model selection, API-key billing, batch generation, or provider-specific controls
+- `provider=openai` with `model=gpt-image-2` uses the OpenAI API directly and requires `OPENAI_API_KEY`
+- Codex/ChatGPT login does not automatically grant OpenAI Images API access to this skill
+
 ## User Input Tools
 
 When this skill prompts the user, follow this tool-selection rule (priority order):

@@ -2,7 +2,7 @@
 
 English | [中文](./README.zh.md)
 
-Skills shared by Baoyu for improving daily work efficiency with Claude Code.
+Skills shared by Baoyu for improving daily work efficiency with Claude Code, Codex, and other agent runtimes that support `SKILL.md`-style workflows.
 
 ## Prerequisites
 
@@ -16,6 +16,30 @@ Skills shared by Baoyu for improving daily work efficiency with Claude Code.
 ```bash
 npx skills add jimliu/baoyu-skills
 ```
+
+### Use with Codex CLI
+
+Codex officially supports reusable skills across the CLI, IDE extension, and Codex app. For this repository, the recommended Codex setup is:
+
+1. Keep this repository somewhere stable, such as `~/github/baoyu-skills`
+2. Register selected skills explicitly in `~/.codex/config.toml`
+3. Use them as user-level global skills across all projects
+
+Example `~/.codex/config.toml` snippet:
+
+```toml
+[[skills.config]]
+path = "/home/yourname/github/baoyu-skills/skills/baoyu-imagine"
+enabled = true
+
+[[skills.config]]
+path = "/home/yourname/github/baoyu-skills/skills/baoyu-danger-gemini-web"
+enabled = true
+```
+
+This explicit registration path is the most stable option when you only use Codex CLI, because it does not depend on any default global-skill directory convention.
+
+See [docs/codex-cli.md](./docs/codex-cli.md) for a Codex-focused setup guide, model-routing notes, and Gemini Web usage guidance.
 
 ### Publish to ClawHub / OpenClaw
 
@@ -716,6 +740,8 @@ AI-powered generation backends.
 
 AI SDK-based image generation using OpenAI GPT Image 2, Azure OpenAI, Google, OpenRouter, DashScope (Aliyun Tongyi Wanxiang), MiniMax, Jimeng (即梦), Seedream (豆包), and Replicate APIs. Supports text-to-image, reference images, aspect ratios, custom sizes, batch generation, and quality presets.
 
+**Codex note**: In Codex CLI, single-image interactive work usually fits the built-in `$imagegen` tool best. Use `baoyu-imagine` when you need explicit provider/model control, API-key-based billing, batch generation, or provider-specific options.
+
 ```bash
 # Basic generation (auto-detect provider)
 /baoyu-imagine --prompt "A cute cat" --image cat.png
@@ -861,9 +887,17 @@ AI SDK-based image generation using OpenAI GPT Image 2, Azure OpenAI, Google, Op
 3. If only one API key is available → use that provider
 4. If multiple providers are available → default to Google, then OpenAI, Azure, OpenRouter, DashScope, Z.AI, MiniMax, Replicate, Jimeng, Seedream
 
+**`gpt-image-2` in Codex vs API**:
+- Codex built-in `$imagegen` also uses `gpt-image-2`
+- `baoyu-imagine --provider openai --model gpt-image-2` uses the OpenAI API directly
+- These two paths are both valid, but they differ in authentication, billing, batching, and operational control
+- `baoyu-imagine` requires `OPENAI_API_KEY`; your Codex/ChatGPT login alone is not enough for its OpenAI API path
+
 #### baoyu-danger-gemini-web
 
 Interacts with Gemini Web to generate text and images.
+
+**Codex note**: This skill is intended to be used directly from Codex as a local skill. It is not a web UI, MCP server, or Codex app-server integration. It wraps local browser-based Gemini Web access for text generation, image generation, reference-image input, and multi-turn conversations.
 
 **Text Generation:**
 
@@ -877,6 +911,14 @@ Interacts with Gemini Web to generate text and images.
 ```bash
 /baoyu-danger-gemini-web --prompt "A cute cat" --image cat.png
 /baoyu-danger-gemini-web --promptfiles system.md content.md --image out.png
+```
+
+**Multi-turn / structured output:**
+
+```bash
+/baoyu-danger-gemini-web "Remember 42" --sessionId demo-42
+/baoyu-danger-gemini-web "What number?" --sessionId demo-42
+/baoyu-danger-gemini-web --prompt "Describe this" --ref image.png --json
 ```
 
 ### Utility Skills
@@ -1236,6 +1278,7 @@ This skill uses the Gemini Web API (reverse-engineered).
 - First run opens a browser to authenticate with Google
 - Cookies are cached for subsequent runs
 - No guarantees on API stability or availability
+- The recommended Codex integration is a local global skill, not a remote app server
 
 **Supported browsers** (auto-detected): Google Chrome, Chrome Canary/Beta, Chromium, Microsoft Edge
 

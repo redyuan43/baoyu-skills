@@ -15,6 +15,16 @@ metadata:
 
 Text/image generation via Gemini Web API. Supports reference images and multi-turn conversations.
 
+## Codex Positioning
+
+Use this as a local Codex skill for Gemini Web access.
+
+- It is intended for direct use from Codex as a local workflow
+- It is not a web UI
+- It is not an MCP server
+- It is not a Codex app-server integration
+- It depends on local browser authentication and cookie refresh
+
 ## User Input Tools
 
 When this skill prompts the user, follow this tool-selection rule (priority order):
