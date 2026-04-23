@@ -2,6 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
+import {
+  getDefaultChromeUserDataDirs,
+} from 'baoyu-chrome-cdp';
 
 import { GeminiClient, GeneratedImage, Model, type ModelOutput } from './gemini-webapi/index.js';
 import { resolveGeminiWebChromeProfileDir, resolveGeminiWebCookiePath, resolveGeminiWebSessionPath, resolveGeminiWebSessionsDir } from './gemini-webapi/utils/index.js';
@@ -14,16 +17,22 @@ type CliArgs = {
   imagePath: string | null;
   referenceImages: string[];
   sessionId: string | null;
+  newSession: boolean;
   listSessions: boolean;
   login: boolean;
   cookiePath: string | null;
   profileDir: string | null;
+  profileEmail: string | null;
+  closeBrowser: boolean;
   help: boolean;
 };
 
 type SessionRecord = {
   id: string;
   metadata: Array<string | null>;
+  profileEmail: string | null;
+  profileDir: string | null;
+  mode: 'text' | 'image';
   messages: Array<{ role: 'user' | 'assistant'; content: string; timestamp: string; error?: string }>;
   createdAt: string;
   updatedAt: string;
@@ -94,10 +103,13 @@ Options:
   --reference <files...>    Reference images for vision input
   --ref <files...>          Alias for --reference
   --sessionId <id>          Session ID for multi-turn conversation (agent should generate unique ID)
+  --new-session             Start a new saved conversation instead of continuing the latest session
   --list-sessions           List saved sessions (max 100, sorted by update time)
   --login                   Only refresh cookies, then exit
   --cookie-path <path>      Cookie file path (default: ${cookiePath})
   --profile-dir <path>      Chrome profile dir (default: ${profileDir})
+  --profile-email <email>   Resolve Chrome profile by signed-in email
+  --close-browser           Close Chrome if this script launched it for login/cookie refresh
   -h, --help                Show help
 
 Env overrides:
@@ -109,7 +121,7 @@ Notes:
   This reuse path is separate from Chrome DevTools MCP's prompt-based --autoConnect flow.`);
 }
 
-function parseArgs(argv: string[]): CliArgs {
+export function parseArgs(argv: string[]): CliArgs {
   const out: CliArgs = {
     prompt: null,
     promptFiles: [],
@@ -118,10 +130,13 @@ function parseArgs(argv: string[]): CliArgs {
     imagePath: null,
     referenceImages: [],
     sessionId: null,
+    newSession: false,
     listSessions: false,
     login: false,
     cookiePath: null,
     profileDir: null,
+    profileEmail: null,
+    closeBrowser: false,
     help: false,
   };
 
@@ -157,8 +172,18 @@ function parseArgs(argv: string[]): CliArgs {
       continue;
     }
 
+    if (a === '--new-session') {
+      out.newSession = true;
+      continue;
+    }
+
     if (a === '--login') {
       out.login = true;
+      continue;
+    }
+
+    if (a === '--close-browser') {
+      out.closeBrowser = true;
       continue;
     }
 
@@ -205,6 +230,13 @@ function parseArgs(argv: string[]): CliArgs {
       continue;
     }
 
+    if (a === '--profile-email') {
+      const v = argv[++i];
+      if (!v) throw new Error('Missing value for --profile-email');
+      out.profileEmail = v;
+      continue;
+    }
+
     if (a === '--image' || a.startsWith('--image=')) {
       let v: string | null = null;
       if (a.startsWith('--image=')) {
@@ -241,6 +273,66 @@ function parseArgs(argv: string[]): CliArgs {
   }
 
   return out;
+}
+
+type ChromeProfile = {
+  profileKey: string;
+  profileDir: string;
+  name: string;
+  email: string | null;
+  isLastUsed: boolean;
+  isSignedIn: boolean;
+};
+
+export function parseChromeProfiles(localStateRaw: string, userDataDir: string): ChromeProfile[] {
+  const parsed = JSON.parse(localStateRaw) as {
+    profile?: {
+      info_cache?: Record<string, { name?: string; user_name?: string }>;
+      last_used?: string;
+    };
+  };
+  const infoCache = parsed.profile?.info_cache ?? {};
+  const lastUsed = parsed.profile?.last_used ?? '';
+  const profiles = Object.entries(infoCache).map(([profileKey, value]) => {
+    const name = typeof value?.name === 'string' && value.name.trim() ? value.name.trim() : profileKey;
+    const email = typeof value?.user_name === 'string' && value.user_name.trim() ? value.user_name.trim() : null;
+    return {
+      profileKey,
+      profileDir: path.join(userDataDir, profileKey),
+      name,
+      email,
+      isLastUsed: profileKey === lastUsed,
+      isSignedIn: email !== null,
+    };
+  });
+  profiles.sort((a, b) => {
+    if (a.isLastUsed !== b.isLastUsed) return a.isLastUsed ? -1 : 1;
+    if (a.isSignedIn !== b.isSignedIn) return a.isSignedIn ? -1 : 1;
+    return a.profileKey.localeCompare(b.profileKey);
+  });
+  return profiles;
+}
+
+async function discoverChromeProfiles(): Promise<ChromeProfile[]> {
+  const roots = getDefaultChromeUserDataDirs(['stable', 'beta', 'canary', 'dev']).map((item) => path.resolve(item));
+  for (const root of roots) {
+    const localStatePath = path.join(root, 'Local State');
+    if (!fs.existsSync(localStatePath)) continue;
+    try {
+      const profiles = parseChromeProfiles(await readFile(localStatePath, 'utf8'), root);
+      if (profiles.length > 0) return profiles;
+    } catch {
+      // Try next Chrome channel.
+    }
+  }
+  return [];
+}
+
+export function pickProfileDirByEmail(profiles: ChromeProfile[], profileEmail: string): string {
+  const wanted = profileEmail.trim().toLowerCase();
+  const found = profiles.find((profile) => profile.email?.toLowerCase() === wanted);
+  if (!found) throw new Error(`No Chrome profile found for email: ${profileEmail}`);
+  return found.profileDir;
 }
 
 function resolveModel(id: string): Model {
@@ -303,6 +395,9 @@ async function loadSession(id: string): Promise<SessionRecord | null> {
     return {
       id: sid,
       metadata,
+      profileEmail: typeof (j as any).profileEmail === 'string' ? (j as any).profileEmail : null,
+      profileDir: typeof (j as any).profileDir === 'string' ? (j as any).profileDir : null,
+      mode: (j as any).mode === 'image' ? 'image' : 'text',
       messages,
       createdAt,
       updatedAt,
@@ -348,6 +443,9 @@ async function listSessions(): Promise<SessionRecord[]> {
         out.push({
           id,
           metadata: normalizeSessionMetadata(j?.metadata ?? j?.chatMetadata ?? j),
+          profileEmail: typeof j?.profileEmail === 'string' ? j.profileEmail : null,
+          profileDir: typeof j?.profileDir === 'string' ? j.profileDir : null,
+          mode: j?.mode === 'image' ? 'image' : 'text',
           messages: Array.isArray(j?.messages) ? j.messages : [],
           createdAt:
             typeof j?.createdAt === 'string'
@@ -365,6 +463,45 @@ async function listSessions(): Promise<SessionRecord[]> {
   } catch {
     return [];
   }
+}
+
+function createSessionId(mode: 'text' | 'image'): string {
+  return `${mode}-${new Date().toISOString().replace(/[:.]/g, '-')}`;
+}
+
+function matchesSessionSelector(
+  session: SessionRecord,
+  selector: { mode: 'text' | 'image'; profileDir: string | null; profileEmail: string | null },
+): boolean {
+  if (session.mode !== selector.mode) return false;
+  if (selector.profileEmail) {
+    return (session.profileEmail ?? '').toLowerCase() === selector.profileEmail.toLowerCase();
+  }
+  if (selector.profileDir) {
+    return !!session.profileDir && path.resolve(session.profileDir) === path.resolve(selector.profileDir);
+  }
+  return true;
+}
+
+export function pickLatestSession(
+  sessions: SessionRecord[],
+  selector: { mode: 'text' | 'image'; profileDir?: string | null; profileEmail?: string | null },
+): SessionRecord | null {
+  return sessions.find((session) => matchesSessionSelector(session, {
+    mode: selector.mode,
+    profileDir: selector.profileDir ?? null,
+    profileEmail: selector.profileEmail ?? null,
+  })) ?? null;
+}
+
+async function resolveInitialSession(
+  args: CliArgs,
+  mode: 'text' | 'image',
+  selector: { profileDir: string | null; profileEmail: string | null },
+): Promise<SessionRecord | null> {
+  if (args.newSession) return null;
+  if (args.sessionId) return await loadSession(args.sessionId);
+  return pickLatestSession(await listSessions(), { mode, ...selector });
 }
 
 function formatJson(out: ModelOutput, extra?: Record<string, unknown>): string {
@@ -399,6 +536,11 @@ async function main(): Promise<void> {
 
   if (args.cookiePath) process.env.GEMINI_WEB_COOKIE_PATH = args.cookiePath;
   if (args.profileDir) process.env.GEMINI_WEB_CHROME_PROFILE_DIR = args.profileDir;
+  if (args.closeBrowser) process.env.GEMINI_WEB_CLOSE_BROWSER = '1';
+  if (args.profileEmail && !args.profileDir) {
+    const profiles = await discoverChromeProfiles();
+    process.env.GEMINI_WEB_CHROME_PROFILE_DIR = pickProfileDirByEmail(profiles, args.profileEmail);
+  }
 
   const cookiePath = resolveGeminiWebCookiePath();
   const profileDir = resolveGeminiWebChromeProfileDir();
@@ -414,7 +556,7 @@ async function main(): Promise<void> {
       const n = s.messages.length;
       const last = s.messages.slice(-1)[0];
       const lastLine = last?.content ? String(last.content).split('\n')[0] : '';
-      console.log(`${s.id}\t${s.updatedAt}\t${n}\t${lastLine}`);
+      console.log(`${s.id}\t${s.updatedAt}\t${s.mode}\t${s.profileEmail ?? '-'}\t${n}\t${lastLine}`);
     }
     return;
   }
@@ -440,21 +582,33 @@ async function main(): Promise<void> {
   }
 
   const model = resolveModel(args.modelId);
+  const mode: 'text' | 'image' = args.imagePath ? 'image' : 'text';
+  const selectedProfileDir = args.profileDir ?? process.env.GEMINI_WEB_CHROME_PROFILE_DIR ?? null;
+  const selectedProfileEmail = args.profileEmail ?? null;
 
   const c = new GeminiClient();
   await c.init({ verbose: false });
   try {
-    let sess: SessionRecord | null = null;
+    let sess = await resolveInitialSession(args, mode, {
+      profileDir: selectedProfileDir,
+      profileEmail: selectedProfileEmail,
+    });
     let chat = null as any;
 
-    if (args.sessionId) {
-      sess = (await loadSession(args.sessionId)) ?? {
-        id: args.sessionId,
+    if (!sess) {
+      sess = {
+        id: args.sessionId ?? createSessionId(mode),
         metadata: [null, null, null],
+        profileEmail: selectedProfileEmail,
+        profileDir: selectedProfileDir,
+        mode,
         messages: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
+    }
+
+    if (sess) {
       chat = c.start_chat({ metadata: sess.metadata, model });
     }
 
@@ -485,17 +639,20 @@ async function main(): Promise<void> {
       }
     }
 
-    if (sess && args.sessionId) {
+    if (sess) {
       const now = new Date().toISOString();
       sess.updatedAt = now;
       sess.metadata = (chat?.metadata ?? sess.metadata).slice(0, 3);
+      sess.profileEmail = selectedProfileEmail ?? sess.profileEmail;
+      sess.profileDir = selectedProfileDir ?? sess.profileDir;
+      sess.mode = mode;
       sess.messages.push({ role: 'user', content: prompt, timestamp: now });
       sess.messages.push({ role: 'assistant', content: out.text ?? '', timestamp: now });
       await saveSession(sess);
     }
 
     if (args.json) {
-      console.log(formatJson(out, { savedImage, sessionId: args.sessionId, model: model.model_name }));
+      console.log(formatJson(out, { savedImage, sessionId: sess?.id ?? null, model: model.model_name, mode }));
     } else if (args.imagePath) {
       console.log(savedImage ?? '');
     } else {
@@ -506,8 +663,10 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((e) => {
-  const msg = e instanceof Error ? e.message : String(e);
-  console.error(msg);
-  process.exit(1);
-});
+if (import.meta.main) {
+  main().catch((e) => {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error(msg);
+    process.exit(1);
+  });
+}

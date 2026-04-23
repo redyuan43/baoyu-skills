@@ -13,12 +13,16 @@ test("parseArgs supports prompt, profile, login, and session options", () => {
   const parsed = parseArgs([
     "--profile-email", "redyuan43@gmail.com",
     "--sessionId", "demo-1",
+    "--new-session",
+    "--close-browser",
     "--json",
     "hello world",
   ]);
 
   assert.equal(parsed.profileEmail, "redyuan43@gmail.com");
   assert.equal(parsed.sessionId, "demo-1");
+  assert.equal(parsed.newSession, true);
+  assert.equal(parsed.closeBrowser, true);
   assert.equal(parsed.json, true);
   assert.equal(parsed.prompt, "hello world");
 });

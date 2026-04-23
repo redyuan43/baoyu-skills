@@ -35,6 +35,25 @@ When this skill prompts the user, follow this tool-selection rule (priority orde
 
 Concrete `AskUserQuestion` references below are examples — substitute the local equivalent in other runtimes.
 
+## Skill Evolution Confirmation
+
+When extending this skill or changing its default behavior, prefer safe, explicit confirmation over guessing.
+
+Proceed directly only for small, backward-compatible fixes, such as adding help text, adding a non-default option, fixing a selector bug, or documenting an existing command.
+
+Ask the user before making changes that affect defaults or user workflow, including:
+
+- Default Chrome profile or account selection
+- Default model selection
+- Whether Gemini Deep Research should be enabled automatically
+- Whether an existing `--sessionId` should be resumed or replaced
+- Whether browser windows or Chrome processes should be closed
+- Session storage location or session migration
+- UI selector behavior when multiple possible buttons/menu items are visible
+- Any behavior that could submit prompts, trigger paid/limited features, or alter account state
+
+If Gemini UI automation is uncertain, first collect observable state, such as visible button labels, current URL, selected tools, account email, and prompt box status. Then ask the user how to adapt the skill before changing broad matching rules or defaults.
+
 ## Script Directory
 
 **Important**: All scripts are located in the `scripts/` subdirectory of this skill.
@@ -49,6 +68,7 @@ Concrete `AskUserQuestion` references below are examples — substitute the loca
 | Script | Purpose |
 |--------|---------|
 | `scripts/main.ts` | CLI entry point for text/image generation |
+| `scripts/deep-research.ts` | Chrome CDP UI automation for opening Gemini Deep Research and submitting a prompt |
 | `scripts/gemini-webapi/*` | TypeScript port of `gemini_webapi` (GeminiClient, types, utils) |
 
 ## Consent Check (REQUIRED)
@@ -90,9 +110,10 @@ If none found, use defaults.
 # Text generation
 ${BUN_X} {baseDir}/scripts/main.ts "Your prompt"
 ${BUN_X} {baseDir}/scripts/main.ts --prompt "Your prompt" --model gemini-3-flash
+${BUN_X} {baseDir}/scripts/main.ts --profile-email ivanfeng3333@gmail.com "Your prompt"
 
 # Image generation
-${BUN_X} {baseDir}/scripts/main.ts --prompt "A cute cat" --image cat.png
+${BUN_X} {baseDir}/scripts/main.ts --profile-email ivanfeng3333@gmail.com --prompt "A cute cat" --image cat.png
 ${BUN_X} {baseDir}/scripts/main.ts --promptfiles system.md content.md --image out.png
 
 # Vision input (reference images)
@@ -102,6 +123,15 @@ ${BUN_X} {baseDir}/scripts/main.ts --prompt "Create variation" --reference a.png
 # Multi-turn conversation
 ${BUN_X} {baseDir}/scripts/main.ts "Remember: 42" --sessionId session-abc
 ${BUN_X} {baseDir}/scripts/main.ts "What number?" --sessionId session-abc
+${BUN_X} {baseDir}/scripts/main.ts --profile-email ivanfeng3333@gmail.com "Continue latest text session"
+${BUN_X} {baseDir}/scripts/main.ts --profile-email ivanfeng3333@gmail.com --new-session "Start a fresh topic"
+
+# Gemini Deep Research UI automation
+${BUN_X} {baseDir}/scripts/deep-research.ts --profile-email ivanfeng3333@gmail.com --sessionId demo-research "Research this topic"
+${BUN_X} {baseDir}/scripts/deep-research.ts --sessionId demo-research "Follow up in the same Gemini conversation"
+${BUN_X} {baseDir}/scripts/deep-research.ts --prompt "Research this topic" --no-submit
+${BUN_X} {baseDir}/scripts/deep-research.ts --list-profiles
+${BUN_X} {baseDir}/scripts/deep-research.ts --list-sessions
 
 # JSON output
 ${BUN_X} {baseDir}/scripts/main.ts "Hello" --json
@@ -117,11 +147,33 @@ ${BUN_X} {baseDir}/scripts/main.ts "Hello" --json
 | `--image [path]` | Generate image (default: generated.png) |
 | `--reference`, `--ref` | Reference images for vision input |
 | `--sessionId` | Session ID for multi-turn conversation |
+| `--new-session` | Start a new saved conversation instead of continuing the latest compatible session |
 | `--list-sessions` | List saved sessions |
 | `--json` | Output as JSON |
 | `--login` | Refresh cookies, then exit |
 | `--cookie-path` | Custom cookie file path |
 | `--profile-dir` | Chrome profile directory |
+| `--profile-email` | Resolve Chrome profile by signed-in email, e.g. `ivanfeng3333@gmail.com` |
+| `--close-browser` | Close Chrome if this script launched it for login/cookie refresh; default is to keep Chrome available for reuse |
+
+### Deep Research UI Automation Options
+
+These options are for `scripts/deep-research.ts`, which uses Chrome CDP to operate the Gemini web UI.
+
+| Option | Description |
+|--------|-------------|
+| `--prompt`, `-p` | Prompt text |
+| `--profile-email` | Resolve Chrome profile by signed-in email, e.g. `ivanfeng3333@gmail.com` |
+| `--profile-dir` | Explicit Chrome profile directory |
+| `--sessionId` | Save or continue a Gemini Deep Research conversation |
+| `--new-session` | Start a new saved Deep Research conversation instead of continuing the latest compatible session |
+| `--list-profiles` | List detected Chrome profiles |
+| `--list-sessions` | List saved Deep Research sessions |
+| `--wait-ms` | Wait after submit before returning |
+| `--no-submit` | Fill the prompt and select Deep Research without submitting |
+| `--json` | Output JSON |
+
+Deep Research sessions are stored separately from RPC chat sessions under `deep-research-sessions/<id>.json` in the Gemini web data directory. A saved session records the Gemini conversation URL and profile metadata so later calls with the same `--sessionId` continue the same web conversation.
 
 ## Models
 
@@ -158,7 +210,9 @@ Force refresh: `--login` flag. Override browser: `GEMINI_WEB_CHROME_PATH` env va
 
 Session files stored in data directory under `sessions/<id>.json`.
 
-Contains: `id`, `metadata` (Gemini chat state), `messages` array, timestamps.
+Prompt runs continue the latest saved compatible session by default unless `--new-session` is passed. Text and image conversations are isolated by `mode` (`text` or `image`) so image generation does not reuse ordinary text context.
+
+Contains: `id`, `metadata` (Gemini chat state), `profileEmail`, `profileDir`, `mode`, `messages` array, timestamps.
 
 ## Extension Support
 

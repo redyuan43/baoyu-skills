@@ -90,6 +90,13 @@ ${BUN_X} {baseDir}/scripts/main.ts --login --profile-email redyuan43@gmail.com
 # Single-turn prompt
 ${BUN_X} {baseDir}/scripts/main.ts --profile-email redyuan43@gmail.com "Summarize this project"
 
+# Continue the latest saved conversation by default
+${BUN_X} {baseDir}/scripts/main.ts --profile-email redyuan43@gmail.com "Continue"
+
+# Start a fresh saved conversation
+${BUN_X} {baseDir}/scripts/main.ts --profile-email redyuan43@gmail.com --new-session "Start a new topic"
+${BUN_X} {baseDir}/scripts/main.ts --profile-email redyuan43@gmail.com --close-browser "Close Chrome after this run"
+
 # Resume a saved conversation
 ${BUN_X} {baseDir}/scripts/main.ts --profile-email redyuan43@gmail.com --sessionId demo-1 "Continue"
 
@@ -103,12 +110,14 @@ ${BUN_X} {baseDir}/scripts/main.ts --profile-email redyuan43@gmail.com --json "W
 |--------|-------------|
 | `--prompt`, `-p` | Prompt text |
 | `--sessionId` | Session ID for multi-turn conversation |
+| `--new-session` | Start a new saved conversation instead of continuing the latest saved session |
 | `--list-sessions` | List saved sessions |
 | `--json` | Output as JSON |
 | `--login` | Open/attach ChatGPT and wait until the composer is ready |
 | `--profile-email` | Resolve Chrome profile by signed-in email |
 | `--profile-dir` | Explicit Chrome profile directory |
 | `--list-profiles` | List detected Chrome profiles |
+| `--close-browser` | Close Chrome if this script launched it; default is to keep Chrome available for reuse |
 | `--help`, `-h` | Show help |
 
 ## Authentication
@@ -132,7 +141,7 @@ Supported browsers (auto-detected): Chrome, Chrome Canary/Beta, Chromium, Edge.
 
 ## Sessions
 
-Session files are stored under `sessions/<id>.json`.
+Session files are stored under `sessions/<id>.json`. Prompt runs continue the latest saved session by default unless `--new-session` is passed. `--sessionId` still resumes a specific named session.
 
 v1 stores:
 - selected profile path/email

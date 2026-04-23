@@ -245,7 +245,13 @@ async function fetch_google_cookies_via_cdp(
       cdp.close();
     }
 
-    if (chrome) await gracefulKillChrome(chrome, port);
+    if (chrome) {
+      if (process.env.GEMINI_WEB_CLOSE_BROWSER?.trim()) {
+        await gracefulKillChrome(chrome, port);
+      } else {
+        chrome.unref?.();
+      }
+    }
   }
 }
 

@@ -52,11 +52,13 @@ export type CliArgs = {
   prompt: string | null;
   json: boolean;
   sessionId: string | null;
+  newSession: boolean;
   listSessions: boolean;
   login: boolean;
   profileDir: string | null;
   profileEmail: string | null;
   listProfiles: boolean;
+  closeBrowser: boolean;
   responseTimeoutMs: number | null;
   help: boolean;
 };
@@ -137,11 +139,13 @@ export function parseArgs(argv: string[]): CliArgs {
     prompt: null,
     json: false,
     sessionId: null,
+    newSession: false,
     listSessions: false,
     login: false,
     profileDir: null,
     profileEmail: null,
     listProfiles: false,
+    closeBrowser: false,
     responseTimeoutMs: null,
     help: false,
   };
@@ -162,12 +166,20 @@ export function parseArgs(argv: string[]): CliArgs {
       out.listSessions = true;
       continue;
     }
+    if (a === "--new-session") {
+      out.newSession = true;
+      continue;
+    }
     if (a === "--list-profiles") {
       out.listProfiles = true;
       continue;
     }
     if (a === "--login") {
       out.login = true;
+      continue;
+    }
+    if (a === "--close-browser") {
+      out.closeBrowser = true;
       continue;
     }
     if (a === "--prompt" || a === "-p") {
@@ -485,6 +497,38 @@ async function listSessions(): Promise<SessionRecord[]> {
   }
 }
 
+function createSessionId(): string {
+  return `chat-${new Date().toISOString().replace(/[:.]/g, "-")}`;
+}
+
+function matchesSessionSelector(
+  session: SessionRecord,
+  selector: { profileDir: string | null; profileEmail: string | null },
+): boolean {
+  if (selector.profileEmail) {
+    return (session.profileEmail ?? "").toLowerCase() === selector.profileEmail.toLowerCase();
+  }
+  if (selector.profileDir) {
+    return path.resolve(session.profileDir) === path.resolve(selector.profileDir);
+  }
+  return true;
+}
+
+async function loadLatestSession(args: CliArgs): Promise<SessionRecord | null> {
+  const selector = {
+    profileDir: args.profileDir ?? process.env.CHATGPT_WEB_CHROME_PROFILE_DIR ?? null,
+    profileEmail: args.profileEmail ?? process.env.CHATGPT_WEB_CHROME_PROFILE_EMAIL ?? null,
+  };
+  const sessions = await listSessions();
+  return sessions.find((session) => session.conversationUrl && matchesSessionSelector(session, selector)) ?? null;
+}
+
+async function resolveInitialSession(args: CliArgs): Promise<SessionRecord | null> {
+  if (args.newSession) return null;
+  if (args.sessionId) return await loadSession(args.sessionId);
+  return await loadLatestSession(args);
+}
+
 function printUsage(): void {
   const cmd = formatScriptCommand("scripts/main.ts");
   console.log(`Usage:
@@ -492,16 +536,19 @@ function printUsage(): void {
   ${cmd} --login --profile-email redyuan43@gmail.com
   ${cmd} --profile-email redyuan43@gmail.com "Summarize this project"
   ${cmd} --profile-email redyuan43@gmail.com --sessionId demo-1 "Continue"
+  ${cmd} --profile-email redyuan43@gmail.com --new-session "Start a fresh conversation"
 
 Options:
   -p, --prompt <text>       Prompt text
   --json                    Output JSON
   --sessionId <id>          Session ID for multi-turn conversation
+  --new-session             Start a new saved conversation instead of continuing the latest session
   --list-sessions           List saved sessions
   --login                   Open ChatGPT and wait until the composer is ready
   --profile-email <email>   Resolve Chrome profile by signed-in email
   --profile-dir <path>      Explicit Chrome profile directory
   --list-profiles           List detected Chrome profiles
+  --close-browser           Close Chrome if this script launched it
   --response-timeout-ms <n> Response wait timeout in ms (default: wait indefinitely; 0 = no timeout)
   -h, --help                Show help
 
@@ -816,10 +863,14 @@ async function openChatGPTBrowser(profile: ChromeProfile, url: string): Promise<
   }
 }
 
-async function closeBrowserSession(session: BrowserSession): Promise<void> {
+async function closeBrowserSession(session: BrowserSession, closeBrowser: boolean): Promise<void> {
   session.cdp.close();
   if (session.chrome) {
-    await gracefulKillChrome(session.chrome, session.port);
+    if (closeBrowser) {
+      await gracefulKillChrome(session.chrome, session.port);
+    } else {
+      session.chrome.unref?.();
+    }
   }
 }
 
@@ -880,7 +931,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  const existingSession = args.sessionId ? await loadSession(args.sessionId) : null;
+  const existingSession = await resolveInitialSession(args);
   const profile = await resolveSelectedProfile(args, existingSession);
 
   if (args.login) {
@@ -899,7 +950,7 @@ async function main(): Promise<void> {
       }
       return;
     } finally {
-      await closeBrowserSession(browser);
+      await closeBrowserSession(browser, args.closeBrowser);
     }
   }
 
@@ -924,10 +975,10 @@ async function main(): Promise<void> {
     })();
     let savedSession: SessionRecord | null = null;
 
-    if (args.sessionId) {
+    {
       const now = new Date().toISOString();
       savedSession = existingSession ?? {
-        id: args.sessionId,
+        id: args.sessionId ?? createSessionId(),
         profileDir: profile.profileDir,
         profileEmail: profile.email,
         conversationUrl: null,
@@ -956,7 +1007,7 @@ async function main(): Promise<void> {
       console.log(result.text);
     }
   } finally {
-    await closeBrowserSession(browser);
+    await closeBrowserSession(browser, args.closeBrowser);
   }
 }
 
