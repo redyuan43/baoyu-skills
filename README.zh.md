@@ -43,6 +43,8 @@ enabled = true
 
 更完整的 Codex 安装、模型路由和 Gemini Web 使用说明见 [docs/codex-cli.md](./docs/codex-cli.md)。
 
+如果要让另一台设备上的 AI agent 自动完成迁移和安装，请使用 [docs/agent-bootstrap.md](./docs/agent-bootstrap.md)。里面有可直接执行的检查清单：克隆仓库、把全部 `baoyu-*` skills 安装到 `~/.codex/skills`、移除旧版遗留副本，并验证安装结果。
+
 ### 发布到 ClawHub / OpenClaw
 
 现在这个仓库支持把每个 `skills/baoyu-*` 目录作为独立 ClawHub skill 发布。

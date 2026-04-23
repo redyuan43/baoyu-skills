@@ -43,6 +43,8 @@ For Codex visual workflows, a good default is `preferred_image_backend: ask` ins
 
 See [docs/codex-cli.md](./docs/codex-cli.md) for a Codex-focused setup guide, model-routing notes, and Gemini Web usage guidance.
 
+If another AI agent needs to bootstrap a new machine, use [docs/agent-bootstrap.md](./docs/agent-bootstrap.md). It contains a copy/paste checklist for cloning the repo, installing all `baoyu-*` skills into `~/.codex/skills`, removing stale legacy copies, and verifying the result.
+
 ### Publish to ClawHub / OpenClaw
 
 This repository now supports publishing each `skills/baoyu-*` directory as an individual ClawHub skill.
